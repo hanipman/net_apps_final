@@ -14,6 +14,212 @@ gameBoard = None
 
 gameOver = False
 
+def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
+    vision = set()
+    stopUp = False
+    stopUpRight = False
+    stopRight = False
+    stopRightDown = False
+    stopDown = False
+    stopDownLeft = False
+    stopLeft = False
+    stopLeftUp = False
+    if(pos in gameBoard):
+        vision.add(pos)
+        row = pos[0]
+        col = pos[1]
+        temp = visionRange+1
+        for visionIt in range(1, temp):
+            #diagonals can only be -1 visionRange
+            if(visionIt == visionRange):
+                stopUpRight = True
+                stopRightDown = True
+                stopDownLeft = True
+                stopLeftUp = True
+            #handle up
+            if(stopUp == False):
+                space = chr(ord(row)-visionIt)+col
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopUp = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopUp = False
+            #handle upRight
+            if(stopUpRight == False):
+                space = chr(ord(row)-visionIt)+str(int(col)+visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopUpRight = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopUpRight = False
+                    if(stopUpRight == False):
+                        #look up and right
+                        stopUpRightUp = False
+                        stopUpRightRight = False
+                        for it in range(1, visionRange-visionIt):
+                            #up
+                            if(stopUpRightUp == False):
+                                space = chr(ord(row)-visionIt-it)+str(int(col)+visionIt)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopUpRightUp = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopUpRightUp = False
+                            #right
+                            if(stopUpRightRight == False):
+                                space = chr(ord(row)-visionIt)+str(int(col)+visionIt+it)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopUpRightRight = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopUpRightRight = False
+            #handle Right
+            if(stopRight == False):
+                space = row+str(int(col)+visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopRight = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopRight = False
+            #handle rightDown
+            if(stopRightDown == False):
+                space = chr(ord(row)+visionIt)+str(int(col)+visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopRightDown = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopRightDown = False
+                    if(stopRightDown == False):
+                        #look right and down
+                        stopRightDownRight = False
+                        stopRightDownDown = False
+                        for it in range(1, visionRange-visionIt):
+                            #right
+                            if(stopRightDownRight == False):
+                                space = chr(ord(row)+visionIt)+str(int(col)+visionIt+it)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopRightDownRight = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopRightDownRight = False
+                            #down
+                            if(stopRightDownDown == False):
+                                space = chr(ord(row)+visionIt+it)+str(int(col)+visionIt)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopRightDownDown = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopRightDownDown = False
+            #handle Down
+            if(stopDown == False):
+                space = chr(ord(row)+visionIt)+col
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopDown = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopDown = False
+            #handle DownLeft
+            if(stopDownLeft == False):
+                space = chr(ord(row)+visionIt)+str(int(col)-visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopDownLeft = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopDownLeft = False
+                    if(stopDownLeft == False):
+                        #look down and left
+                        stopDownLeftDown = False
+                        stopDownLeftLeft = False
+                        for it in range(1, visionRange-visionIt):
+                            #down
+                            if(stopDownLeftDown == False):
+                                space = chr(ord(row)+visionIt+it)+str(int(col)-visionIt)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopDownLeftDown = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopDownLeftDown = False
+                            #left
+                            if(stopDownLeftLeft == False):
+                                space = chr(ord(row)+visionIt)+str(int(col)-visionIt-it)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopDownLeftLeft = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopDownLeftLeft = False
+            #handle Left
+            if(stopLeft == False):
+                space = row+str(int(col)-visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopLeft = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopLeft = False
+            #handle LeftUp
+            if(stopLeftUp == False):
+                space = chr(ord(row)-visionIt)+str(int(col)-visionIt)
+                if(space in gameBoard):
+                    vision.add(space)
+                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                        stopLeftUp = True
+                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                            stopLeftUp = False
+                    if(stopLeftUp == False):
+                        #look left and up
+                        stopLeftUpLeft = False
+                        stopLeftUpUp = False
+                        for it in range(1, visionRange-visionIt):
+                            #left
+                            if(stopLeftUpLeft == False):
+                                space = chr(ord(row)-visionIt)+str(int(col)-visionIt-it)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopLeftUpLeft = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopLeftUpLeft = False
+                            #up
+                            if(stopLeftUpUp == False):
+                                space = chr(ord(row)-visionIt-it)+str(int(col)-visionIt)
+                                if(space in gameBoard):
+                                    vision.add(space)
+                                    if((gameBoard[space] != 'plains') and (gameBoard[space] != 'lake')):
+                                        stopLeftUpUp = True
+                                        if(isRangerInForest and gameBoard[space] == 'forest'):
+                                            #rangers aren't inhibitted from seeing over treetops, when in another forest
+                                            stopLeftUpUp = False
+    return vision
+        
+        
+
 def setPlayerVision(players_units):
     vision = set()
     wloc = players_units['warrior']
@@ -21,465 +227,32 @@ def setPlayerVision(players_units):
     sloc = players_units['sorceress']
     units_loc = [wloc, rloc, sloc]
     for each in units_loc:
-    #warriors vision
-        if(each == wloc):
-            if(each in gameBoard):
+        if(each != 'DEAD' and each != 'DEPLOY'):
+            #warriors vision
+            if(each == wloc):
                 if(gameBoard[each] == 'forest'):
                     #1 less vision
-                    #add vision to warrior space
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
+                    vision = vision | setVisionFromStatAndPos(2, wloc, False)
                 else:
                     #add vision to warrior space normally
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)+3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)-3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)+3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)-3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-        #ranger's vision
-        elif(each == rloc):
-            if(each in gameBoard):
+                    vision = vision | setVisionFromStatAndPos(3, wloc, False)
+                        
+            #ranger's vision
+            elif(each == rloc):
                 if(gameBoard[each] == 'forest'):
                     #5 space vision
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)+3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = row+str(int(col)+4)
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                                    space = row+str(int(col)+5)
-                                                    if(space in gameBoard):
-                                                        #add 5th right space
-                                                        vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)-3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = row+str(int(col)-4)
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                                    space = row+str(int(col)-5)
-                                                    if(space in gameBoard):
-                                                        #add 5th right space
-                                                        vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)+3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = chr(ord(row)+4)+col
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                                    space = chr(ord(row)+5)+col
-                                                    if(space in gameBoard):
-                                                        #add 5th right space
-                                                        vision.add(space)
-                                        
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)-3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = chr(ord(row)-4)+col
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                                    space = chr(ord(row)-5)+col
-                                                    if(space in gameBoard):
-                                                        #add 5th right space
-                                                        vision.add(space)
-                                    
+                    vision = vision | setVisionFromStatAndPos(5, rloc, True) 
                 else:
                     #4 space vision
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)+3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = row+str(int(col)+4)
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)-3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = row+str(int(col)-4)
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)+3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = chr(ord(row)+4)+col
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-                                        
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)-3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                            space = chr(ord(row)-4)+col
-                                            if(space in gameBoard):
-                                                #add 4th right space
-                                                vision.add(space)
-        #sorceress vision
-        elif(each == sloc):
-            if(each in gameBoard):
+                    vision = vision | setVisionFromStatAndPos(4, rloc, False)
+            #sorceress vision
+            elif(each == sloc):
                 if(gameBoard[each] == 'forest'):
                     #1 less
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
+                    vision = vision | setVisionFromStatAndPos(2, sloc, False)
                 else:
                     #3 vision
-                    vision.add(each)
-                    row = each[0]
-                    col = each[1]
-                    #look right
-                    space = row+str(int(col)+1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)+2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)+3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look left
-                    row = each[0]
-                    col = each[1]
-                    space = row+str(int(col)-1)
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = row+str(int(col)-2)
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = row+str(int(col)-3)
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look forward
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)+1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)+2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)+3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
-                    #look back
-                    row = each[0]
-                    col = each[1]
-                    space = chr(ord(row)-1)+col
-                    if(space in gameBoard):
-                        #add space to right
-                        vision.add(space)
-                        if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                            space = chr(ord(row)-2)+col
-                            if(space in gameBoard):
-                                #add 2nd right space
-                                vision.add(space)
-                                if(gameBoard[space] == 'plains' or gameBoard[space] == 'lake'):
-                                    space = chr(ord(row)-3)+col
-                                    if(space in gameBoard):
-                                        #add 3rd right space
-                                        vision.add(space)
+                    vision = vision | setVisionFromStatAndPos(3, sloc, False)
     return vision
         
             
@@ -503,8 +276,37 @@ def afterDeployInit(p1, p2):
     print("Player1's Vision = " + str(player1_vision))
     print("Player2's Vision = " + str(player2_vision))
 
+def printBoard(player_units):
+    row =[]
+    letters = 'ABCDEFGH'
+    numbers = '12345678'
+    print('  '+numbers)
+    wloc = player_units['warrior']
+    for let in letters:
+        for num in numbers:
+            if(gameBoard[let+num] == 'plains'):
+                if(let+num == wloc):
+                    row.append('w')
+                else:
+                    row.append('p')
+            elif(gameBoard[let+num] == 'mountain'):
+                if(let+num == wloc):
+                    row.append('W')
+                else:
+                    row.append('m')
+            elif(gameBoard[let+num] == 'forest'):
+                if(let+num == wloc):
+                    row.append('w')
+                else:
+                    row.append('f')
+            elif(gameBoard[let+num] == 'lake'):
+                row.append('l')
+                    
+        print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+        row.clear()
+
 def randomGeo():
-    geo = ['plains', 'forest', 'mountain', 'lake']
+    geo = ['plains', 'plains','forest', 'mountain', 'lake']
     return random.choice(geo)
 
 def createBoard():
@@ -520,22 +322,21 @@ def main():
     global gameBoard
     gameBoard = createBoard()
     #TODO REMOVE THIS CODE
-    print(gameBoard)
+    printBoard(player1_units)
     w1Deploy = input("Player 1: Where for W")
-    r1Deploy = input("Player 1: Where for R")
-    s1Deploy = input("Player 1: Where for S")
-    w2Deploy = input("Player 2: Where for W")
-    r2Deploy = input("Player 2: Where for R")
-    s2Deploy = input("Player 2: Where for S")
-    p1 = {'warrior':w1Deploy, 'ranger':r1Deploy, 'sorceress':s1Deploy}
-    p2 = {'warrior':w2Deploy, 'ranger':r2Deploy, 'sorceress':s2Deploy}
+    #r1Deploy = input("Player 1: Where for R")
+    #s1Deploy = input("Player 1: Where for S")
+    #w2Deploy = input("Player 2: Where for W")
+    #r2Deploy = input("Player 2: Where for R")
+    #s2Deploy = input("Player 2: Where for S")
+    p1 = {'warrior':w1Deploy, 'ranger':'DEAD', 'sorceress':'DEAD'}
+    p2 = {'warrior':'DEAD', 'ranger':'DEAD', 'sorceress':'DEAD'}
     #TODO push gameBoard through message queue
     #TODO p1 and p2 will be messages sent from services.py based on android input
     afterDeployInit(p1, p2)
-    while(~gameOver):
-        takeTurns()
+    #while(~gameOver):
+        #takeTurns()
     #TODO ShowEndResults()
-    return None
 
 if __name__ == "__main__":
     main()
