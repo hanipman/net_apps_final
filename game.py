@@ -261,7 +261,6 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
-<<<<<<< HEAD
 
 def processMoves(unit, currentLoc, targetLoc) :
     #Allow a player a certain amount of moves
@@ -271,13 +270,10 @@ def processMoves(unit, currentLoc, targetLoc) :
     #Start over with one less move
     return None;
 
-=======
        
 def processMoves(unit, currentLoc, targetLoc):
     return None
- 
- 
->>>>>>> b342eadc6a9966f10c9810111d4e44b070ddcc2e
+
 def checkValidMove(unit, loc) :
      if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
