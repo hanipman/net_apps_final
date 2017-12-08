@@ -264,33 +264,6 @@ def takeTurns():
            # executeWarriorMove(play1_player1)
            return None
 
-def processMoves(unit, currentLoc, targetLoc) :
-
-
-def checkValidMove(unit, loc) :
-    if(loc in gameBoard) :
-        if(gameBoard[loc] == 'mountain') :
-            if(unit == 'warrior'):
-                return True;
-            else :
-                return False;
-        else if (gameBoard[loc] == 'lake') :
-            if(unit == 'sorceress'):
-                return True;
-            else :
-                return False;
-        else :
-            return True;
-    else :
-        return False;
-
-def checkVisionBonus(unit, loc) :
-    if(gameBoard[loc] == 'plains'):
-        return False;
-    else if (gameBoard[loc] == 'forest' and unit == 'ranger') :
-        return True;
-    else return False;
-
 def afterDeployInit(p1, p2):
     global player1_units
     global player2_units
@@ -304,16 +277,23 @@ def afterDeployInit(p1, p2):
     print("Player2's Vision = " + str(player2_vision))
 
 def printBoard(player_units):
+    #CommandLine print
     row =[]
     letters = 'ABCDEFGH'
     numbers = '12345678'
     print('  '+numbers)
     wloc = player_units['warrior']
+    rloc = player_units['ranger']
+    sloc = player_units['sorceress']
     for let in letters:
         for num in numbers:
             if(gameBoard[let+num] == 'plains'):
                 if(let+num == wloc):
                     row.append('w')
+                elif(let+num == rloc):
+                    row.append('r')
+                elif(let+num == sloc):
+                    row.append('s')
                 else:
                     row.append('p')
             elif(gameBoard[let+num] == 'mountain'):
@@ -324,9 +304,15 @@ def printBoard(player_units):
             elif(gameBoard[let+num] == 'forest'):
                 if(let+num == wloc):
                     row.append('w')
+                elif(let+num == rloc):
+                    row.append('R')
+                elif(let+num == sloc):
+                    row.append('s')
                 else:
                     row.append('f')
             elif(gameBoard[let+num] == 'lake'):
+                if(let+num == sloc):
+                    row.append('S')
                 row.append('l')
                     
         print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
@@ -345,11 +331,7 @@ def createBoard():
             board[x+y] = randomGeo()
     return board
 
-def main():
-    global gameBoard
-    gameBoard = createBoard()
-    #TODO REMOVE THIS CODE
-    printBoard(player1_units)
+def deployFromCommandLine():
     w1Deploy = input("Player 1: Where for W")
     #r1Deploy = input("Player 1: Where for R")
     #s1Deploy = input("Player 1: Where for S")
@@ -358,6 +340,13 @@ def main():
     #s2Deploy = input("Player 2: Where for S")
     p1 = {'warrior':w1Deploy, 'ranger':'DEAD', 'sorceress':'DEAD'}
     p2 = {'warrior':'DEAD', 'ranger':'DEAD', 'sorceress':'DEAD'}
+
+def main():
+    global gameBoard
+    gameBoard = createBoard()
+    #TODO REMOVE THIS CODE
+    printBoard(player1_units)
+    
     #TODO push gameBoard through message queue
     #TODO p1 and p2 will be messages sent from services.py based on android input
     afterDeployInit(p1, p2)
