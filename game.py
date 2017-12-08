@@ -286,6 +286,13 @@ def checkValidMove(unit, loc) :
     else :
         return False;
 
+def checkVisionBonus(unit, loc) :
+    if(gameBoard[loc] == 'plains'):
+        return False;
+    else if (gameBoard[loc] == 'forest' and unit == 'ranger') :
+        return True;
+    else return False;
+
 def afterDeployInit(p1, p2):
     global player1_units
     global player2_units
