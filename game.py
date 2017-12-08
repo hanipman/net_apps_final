@@ -293,13 +293,11 @@ def checkVisionBonus(unit, loc):
         return False
                   
 
-def afterDeployInit(p1, p2):
+def afterDeployInit():
     global player1_units
     global player2_units
     global player1_vision
     global player2_vision
-    player1_units = p1
-    player2_units = p2
     player1_vision = setPlayerVision(player1_units)
     player2_vision = setPlayerVision(player2_units)
     print("Player1's Vision = " + str(player1_vision))
@@ -360,26 +358,108 @@ def createBoard():
             board[x+y] = randomGeo()
     return board
 
-def deployFromCommandLine():
-    w1Deploy = input("Player 1: Where for W")
-    #r1Deploy = input("Player 1: Where for R")
-    #s1Deploy = input("Player 1: Where for S")
-    #w2Deploy = input("Player 2: Where for W")
-    #r2Deploy = input("Player 2: Where for R")
-    #s2Deploy = input("Player 2: Where for S")
-    p1 = {'warrior':w1Deploy, 'ranger':'DEAD', 'sorceress':'DEAD'}
-    p2 = {'warrior':'DEAD', 'ranger':'DEAD', 'sorceress':'DEAD'}
+def checkInDeploymentZone(player, pos):
+    deploymentZone = []
+    if(player == 'player1'):
+        for let in 'AB':
+            for num in '12345678':
+                deploymentZone.append(let+num)
+        if(pos in deploymentZone):
+            return True
+        else:
+            return False
+    else:
+        #player2
+        for let in 'GH':
+            for num in '12345678':
+                deploymentZone.append(let+num)
+        if(pos in deploymentZone):
+            return True
+        else:
+            return False
+        
+#checks if space has no units in it
+def isEmptySpace(pos): 
+    p1wloc = player1_units['warrior']
+    p1rloc = player1_units['ranger']
+    p1sloc = player1_units['sorceress']
+    p2wloc = player2_units['warrior']
+    p2rloc = player2_units['ranger']
+    p2sloc = player2_units['sorceress']
+    if(pos != p1wloc and pos != p1rloc and pos != p1sloc and pos != p2wloc and pos != p2rloc and pos != p2sloc):
+        return True
+    else:
+        return False
+     
+#checks if unit can go into space     
+def unitCanEnterSpace(unit, pos):
+    if(unit == 'warrior'):
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'mountain' or gameBoard[pos] == 'forest'):
+            return True
+        else:
+            return False
+    elif(unit == 'ranger'):
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest'):
+            return True
+        else:
+            return False
+    else:
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest' or gameBoard[pos] == 'lake'):
+            return True
+        else:
+            return False
+
+def deployP1UnitFromCommandLine(unit):
+    global player1_units
+    while(player1_units[unit] == 'DEPLOY'):
+        p1Deploy = input("Player 1: Where for "+unit)
+        if(checkInDeploymentZone('player1', p1Deploy) == False):
+            print("Pick a space in the first 2 rows")
+        else:
+            if(unitCanEnterSpace(unit, p1Deploy) == False):
+                print("Unit cannot enter "+p1Deploy)
+            else:
+                if(isEmptySpace(p1Deploy) == False):
+                    print("Space is not empty "+p1Deploy)
+                else:
+                    player1_units[unit] = p1Deploy
+                    
+def deployP2UnitFromCommandLine(unit):
+    global player2_units
+    while(player2_units[unit] == 'DEPLOY'):
+        p2Deploy = input("Player 2: Where for "+unit)
+        if(checkInDeploymentZone('player2', p2Deploy) == False):
+            print("Pick a space in the first 2 rows")
+        else:
+            if(unitCanEnterSpace(unit, p2Deploy) == False):
+                print("Unit cannot enter "+p2Deploy)
+            else:
+                if(isEmptySpace(p2Deploy) == False):
+                    print("Space is not empty "+p2Deploy)
+                else:
+                    player2_units[unit] = p2Deploy
+                    
+def deployPlayerCommandLine(player):
+    units = ['warrior', 'ranger', 'sorceress']
+    if(player == 'player1'):
+        for unit in units:
+            deployP1UnitFromCommandLine(unit)
+    else:
+        #player2
+        for unit in units:
+            deployP2UnitFromCommandLine(unit)
 
 def main():
     global gameBoard
     gameBoard = createBoard()
-    #TODO REMOVE THIS CODE
     printBoard(player1_units)
-    
+    deployPlayerCommandLine('player1')
+    deployPlayerCommandLine('player2')
     #TODO push gameBoard through message queue
     #TODO p1 and p2 will be messages sent from services.py based on android input
-    afterDeployInit(p1, p2)
+    afterDeployInit()
     printBoard(player1_units)
+    printBoard(player2_units)
     #while(~gameOver):
         #takeTurns()
     #TODO ShowEndResults()
