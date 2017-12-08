@@ -218,8 +218,6 @@ def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
                                             stopLeftUpUp = False
     return vision
         
-        
-
 def setPlayerVision(players_units):
     vision = set()
     wloc = players_units['warrior']
@@ -263,11 +261,19 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
+
+def processMoves(unit, currentLoc, targetLoc) :
+    #Allow a player a certain amount of moves
+    #Wait for a player's input
+    #Draw the character in the position
+    #Redraw vision
+    #Start over with one less move
+    return None;
+
        
 def processMoves(unit, currentLoc, targetLoc):
     return None
- 
- 
+
 def checkValidMove(unit, loc) :
      if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
