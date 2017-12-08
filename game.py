@@ -264,15 +264,13 @@ def takeTurns():
            # executeWarriorMove(play1_player1)
            return None
 
+def processMoves(unit, currentLoc, targetLoc) :
+
+
 def checkValidMove(unit, loc) :
     if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
             if(unit == 'warrior'):
-                return True;
-            else :
-                return False;
-        else if (gameBoard[loc] == 'forest') :
-            if(unit == 'ranger') :
                 return True;
             else :
                 return False;
