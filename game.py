@@ -334,6 +334,7 @@ def main():
     #TODO push gameBoard through message queue
     #TODO p1 and p2 will be messages sent from services.py based on android input
     afterDeployInit(p1, p2)
+    printBoard(player1_units)
     #while(~gameOver):
         #takeTurns()
     #TODO ShowEndResults()
