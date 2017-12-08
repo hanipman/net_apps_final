@@ -7,8 +7,8 @@ import sys
 from pymongo import MongoClient
 from rmq_params import rmq_params
 
-cred = pika.PlainCredentials('pi', 'raspberry')
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', virtual_host='test', credentials=cred))
+cred = pika.PlainCredentials(rmq_params['username'], rmq_params['password'])
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', virtual_host=rmq_params['vhost'], credentials=cred))
 channel = connection.channel();
 print("Connected to vhost'" + rmq_params["vhost"] + "' on RMQ server at 'localhost' as user'" + rmq_params["username"] + "'")
 
