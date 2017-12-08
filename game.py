@@ -263,6 +263,35 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
+       
+def processMoves(unit, currentLoc, targetLoc):
+    return None
+ 
+ 
+def checkValidMove(unit, loc) :
+     if(loc in gameBoard) :
+        if(gameBoard[loc] == 'mountain') :
+             if(unit == 'warrior'):
+                 return True;
+             else:
+                 return False;
+        elif (gameBoard[loc] == 'forest') :
+                 if(unit == 'ranger') :
+                     return True;
+                 else:
+                     return False
+        elif (gameBoard[loc] == 'lake') :
+            if(unit == 'sorceress'):
+                return True;
+              
+def checkVisionBonus(unit, loc):
+    if(gameBoard[loc] == 'plains'):
+        return False
+    elif(gameBoard[loc] == 'forest' and unit == 'ranger'):
+        return True
+    else:
+        return False
+                  
 
 def afterDeployInit(p1, p2):
     global player1_units
