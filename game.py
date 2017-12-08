@@ -264,6 +264,28 @@ def takeTurns():
            # executeWarriorMove(play1_player1)
            return None
 
+def checkValidMove(unit, loc) :
+    if(loc in gameBoard) :
+        if(gameBoard[loc] == 'mountain') :
+            if(unit == 'warrior'):
+                return True;
+            else :
+                return False;
+        else if (gameBoard[loc] == 'forest') :
+            if(unit == 'ranger') :
+                return True;
+            else :
+                return False;
+        else if (gameBoard[loc] == 'lake') :
+            if(unit == 'sorceress'):
+                return True;
+            else :
+                return False;
+        else :
+            return True;
+    else :
+        return False;
+
 def afterDeployInit(p1, p2):
     global player1_units
     global player2_units
