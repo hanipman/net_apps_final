@@ -4,6 +4,7 @@
 import random
 import rmq_params
 import pika
+import json
 #import testGame
 
 #define globals
@@ -225,8 +226,8 @@ def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
                                             #rangers aren't inhibitted from seeing over treetops, when in another forest
                                             stopLeftUpUp = False
     return vision
-        
-        
+
+
 
 def setPlayerVision(players_units):
     vision = set()
@@ -244,12 +245,12 @@ def setPlayerVision(players_units):
                 else:
                     #add vision to warrior space normally
                     vision = vision | setVisionFromStatAndPos(3, wloc, False)
-                        
+
             #ranger's vision
             elif(each == rloc):
                 if(gameBoard[each] == 'forest'):
                     #5 space vision
-                    vision = vision | setVisionFromStatAndPos(5, rloc, True) 
+                    vision = vision | setVisionFromStatAndPos(5, rloc, True)
                 else:
                     #4 space vision
                     vision = vision | setVisionFromStatAndPos(4, rloc, False)
@@ -262,7 +263,7 @@ def setPlayerVision(players_units):
                     #3 vision
                     vision = vision | setVisionFromStatAndPos(3, sloc, False)
     return vision
-        
+
 
 def takeTurns():
     #TODO wait to receive message, which will be from P1
@@ -270,11 +271,11 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
-     
+
 #Turner's Code
 def processMoves(unit, currentLoc, targetLoc):
     return None
- 
+
 def checkValidMove(unit, loc) :
      if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
@@ -290,7 +291,7 @@ def checkValidMove(unit, loc) :
         elif (gameBoard[loc] == 'lake') :
             if(unit == 'sorceress'):
                 return True;
-              
+
 def checkVisionBonus(unit, loc):
     if(gameBoard[loc] == 'plains'):
         return False
@@ -298,7 +299,7 @@ def checkVisionBonus(unit, loc):
         return True
     else:
         return False
-                  
+
 
 def afterDeployInit():
     global player1_units
@@ -370,7 +371,7 @@ def printBoardP2():
                     row.append('S')
                 else:
                     row.append('l')
-                    
+
         print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
         row.clear()
 
@@ -438,12 +439,12 @@ def printBoardP1():
                         row.append('S')
                     else:
                         row.append('l')
-                    
+
         print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
         row.clear()
 
 def randomGeo():
-    geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable 
+    geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
 
 def createBoard():
@@ -476,9 +477,9 @@ def checkInDeploymentZone(player, pos):
             return True
         else:
             return False
-        
+
 #checks if space has no units in it
-def isEmptySpace(pos): 
+def isEmptySpace(pos):
     p1wloc = player1_units['warrior']
     p1rloc = player1_units['ranger']
     p1sloc = player1_units['sorceress']
@@ -489,8 +490,8 @@ def isEmptySpace(pos):
         return True
     else:
         return False
-     
-#checks if unit can go into space     
+
+#checks if unit can go into space
 def unitCanEnterSpace(unit, pos):
     if(unit == 'warrior'):
         if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'mountain' or gameBoard[pos] == 'forest'):
@@ -522,7 +523,7 @@ def deployP1UnitFromCommandLine(unit):
                     print("Space is not empty "+p1Deploy)
                 else:
                     player1_units[unit] = p1Deploy
-                    
+
 def deployP2UnitFromCommandLine(unit):
     global player2_units
     while(player2_units[unit] == 'DEPLOY'):
@@ -537,7 +538,7 @@ def deployP2UnitFromCommandLine(unit):
                     print("Space is not empty "+p2Deploy)
                 else:
                     player2_units[unit] = p2Deploy
-                    
+
 def deployPlayerCommandLine(player):
     units = ['warrior', 'ranger', 'sorceress']
     if(player == 'player1'):
@@ -548,11 +549,67 @@ def deployPlayerCommandLine(player):
         for unit in units:
             deployP2UnitFromCommandLine(unit)
 
+####   RabbitMQ Stuff ####
+
+bothConnected = False
+player1Connected = False
+player2Connected = False
+consumer_id = " "
+
+def callback(ch, method, properties, body):
+    print(" [x] Received %r" % body)
+    channel.basic_publish(exchange='servertostorage',
+                          routing_key='store',
+                          body=body)
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player1',
+                          body='response')
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player1',
+                          body='response')
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body='response')
+
+def on_message(ch, method, properties, body):
+    body = str(body)
+    body = body[2:-1]
+    if body == "player1":
+        print("Player 1 Connected")
+        global player1Connected
+        player1Connected = True
+    elif body == "player2":
+        print("Player 2 Connected")
+        global player2Connected
+        player2Connected = True
+    if player1Connected == True and player2Connected == True:
+        global bothConnected
+        bothConnected = True
+        channel.basic_cancel(consumer_tag=consumer_id)
+
+def checkIfPlayersConnected():
+    while bothConnected == False:
+        print('Waiting for players to connect...')
+        global consumer_id
+        consumer_id = channel.basic_consume(on_message, queue='server', no_ack=True)
+        channel.start_consuming()
+
+###########################
+
 def main():
     connectRMQ()
+    checkIfPlayersConnected();
     createBoard()
     printBoardP1()#TODO push gameBoard through message queue
     #printBoardP2()
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player1',
+                          body=json.dumps(gameBoard),
+                          properties=pika.BasicProperties(delivery_mode = 2))
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body=json.dumps(gameBoard),
+                          properties=pika.BasicProperties(delivery_mode = 2))
     deployPlayerCommandLine('player1')#TODO deploy through RMQ
     deployPlayerCommandLine('player2')
     afterDeployInit()
