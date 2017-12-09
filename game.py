@@ -2,7 +2,10 @@
 
 #imports
 import random
-
+import rmq_params
+import sys
+import getopt
+import pika
 #import testGame
 
 #define globals
@@ -11,8 +14,16 @@ player2_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
 player1_vision = set()
 player2_vision = set()
 gameBoard = None
-
+RMQ_server_address = None
 gameOver = False
+channel = None
+
+def connectRMQ():
+    global channel
+    login = pika.PlainCredentials(rmq_params.rmq_params["username"], rmq_params.rmq_params["password"])
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RMQ_server_address, credentials=login, virtual_host=rmq_params.rmq_params["vhost"]))
+    channel = connection.channel()
+    return None
 
 def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
     vision = set()
@@ -218,6 +229,8 @@ def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
                                             stopLeftUpUp = False
     return vision
         
+        
+
 def setPlayerVision(players_units):
     vision = set()
     wloc = players_units['warrior']
@@ -261,19 +274,11 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
-
-def processMoves(unit, currentLoc, targetLoc) :
-    #Allow a player a certain amount of moves
-    #Wait for a player's input
-    #Draw the character in the position
-    #Redraw vision
-    #Start over with one less move
-    return None;
-
        
 def processMoves(unit, currentLoc, targetLoc):
     return None
-
+ 
+ 
 def checkValidMove(unit, loc) :
      if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
@@ -306,20 +311,41 @@ def afterDeployInit():
     global player2_vision
     player1_vision = setPlayerVision(player1_units)
     player2_vision = setPlayerVision(player2_units)
+    #TODO vision message on RMQ
     print("Player1's Vision = " + str(player1_vision))
     print("Player2's Vision = " + str(player2_vision))
 
-def printBoard(player_units):
-    #CommandLine print
+def printBoardP2():
+    #TODO P2 units status message on RMQ
+    #CommandLine print TODO: move into CommandLine client code
     row =[]
     letters = 'ABCDEFGH'
     numbers = '12345678'
     print('  '+numbers)
-    wloc = player_units['warrior']
-    rloc = player_units['ranger']
-    sloc = player_units['sorceress']
+    wloc = player2_units['warrior']
+    rloc = player2_units['ranger']
+    sloc = player2_units['sorceress']
+    otherWloc = player1_units['warrior']
+    otherRloc = player1_units['ranger']
+    otherSloc = player1_units['sorceress']
     for let in letters:
         for num in numbers:
+            if(let+num in player2_vision):# and (let+num == otherWloc or let+num == otherRloc or let+num == otherSloc)):
+                if(let+num == otherWloc):
+                    if(gameBoard[let+num] == 'mountain'):
+                        row.append('W')
+                    else:
+                        row.append('w')
+                elif(let+num == otherRloc):
+                    if(gameBoard[let+num] == 'forest'):
+                        row.append('R')
+                    else:
+                        row.append('r')
+                elif(let+num == otherSloc):
+                    if(gameBoard[let+num] == 'lake'):
+                        row.append('S')
+                    else:
+                        row.append('s')
             if(gameBoard[let+num] == 'plains'):
                 if(let+num == wloc):
                     row.append('w')
@@ -346,7 +372,76 @@ def printBoard(player_units):
             elif(gameBoard[let+num] == 'lake'):
                 if(let+num == sloc):
                     row.append('S')
-                row.append('l')
+                else:
+                    row.append('l')
+                    
+        print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+        row.clear()
+
+def printBoardP1():
+    #TODO P1 units status on RMQ
+    #CommandLine print
+    row =[]
+    letters = 'ABCDEFGH'
+    numbers = '12345678'
+    print('  '+numbers)
+    wloc = player1_units['warrior']
+    rloc = player1_units['ranger']
+    sloc = player1_units['sorceress']
+    otherWloc = player2_units['warrior']
+    otherRloc = player2_units['ranger']
+    otherSloc = player2_units['sorceress']
+    for let in letters:
+        for num in numbers:
+            skipSpace = False
+            if(let+num in player1_vision):
+                if(let+num == otherWloc):
+                    skipSpace = True
+                    if(gameBoard[let+num] == 'mountain'):
+                        row.append('W')
+                    else:
+                        row.append('w')
+                elif(let+num == otherRloc):
+                    skipSpace = True
+                    if(gameBoard[let+num] == 'forest'):
+                        row.append('R')
+                    else:
+                        row.append('r')
+                elif(let+num == otherSloc):
+                    skipSpace = True
+                    if(gameBoard[let+num] == 'lake'):
+                        row.append('S')
+                    else:
+                        row.append('s')
+            if(skipSpace == False):
+                if(gameBoard[let+num] == 'plains'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('r')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('p')
+                elif(gameBoard[let+num] == 'mountain'):
+                    if(let+num == wloc):
+                        row.append('W')
+                    else:
+                        row.append('m')
+                elif(gameBoard[let+num] == 'forest'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('R')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('f')
+                elif(gameBoard[let+num] == 'lake'):
+                    if(let+num == sloc):
+                        row.append('S')
+                    else:
+                        row.append('l')
                     
         print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
         row.clear()
@@ -356,13 +451,14 @@ def randomGeo():
     return random.choice(geo)
 
 def createBoard():
+    global gameBoard
     board = {}
     letters = 'ABCDEFGH'
     numbers = '12345678'
     for x in letters:
         for y in numbers:
             board[x+y] = randomGeo()
-    return board
+    gameBoard = board
 
 def checkInDeploymentZone(player, pos):
     deploymentZone = []
@@ -454,18 +550,34 @@ def deployPlayerCommandLine(player):
         #player2
         for unit in units:
             deployP2UnitFromCommandLine(unit)
+            
+def getRMQ_server_address():
+    global RMQ_server_address
+    
+    #Get RMQ_server_address
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"s:")
+    except getopt.GetoptError:
+            print("bridge.py -s <RMQ_SERVER_ADDRESS>")
+            sys.exit(2)
+    if(len(opts) < 1):
+        print("Usage:")
+        print("bridge.py -s <RMQ_SERVER_ADDRESS>")
+    for opt, arg in opts:
+            if opt == "-s":
+                    RMQ_server_address = arg
 
 def main():
-    global gameBoard
-    gameBoard = createBoard()
-    printBoard(player1_units)
-    deployPlayerCommandLine('player1')
+    getRMQ_server_address()
+    connectRMQ()
+    createBoard()
+    printBoardP1()#TODO push gameBoard through message queue
+    #printBoardP2()
+    deployPlayerCommandLine('player1')#TODO deploy through RMQ
     deployPlayerCommandLine('player2')
-    #TODO push gameBoard through message queue
-    #TODO p1 and p2 will be messages sent from services.py based on android input
     afterDeployInit()
-    printBoard(player1_units)
-    printBoard(player2_units)
+    printBoardP1()
+    printBoardP2()
     #while(~gameOver):
         #takeTurns()
     #TODO ShowEndResults()
