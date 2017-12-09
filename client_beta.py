@@ -10,11 +10,11 @@ def getRMQ_server_address():
     try:
         opts, args = getopt.getopt(sys.argv[1:],"s:")
     except getopt.GetoptError:
-            print("bridge.py -s <RMQ_SERVER_ADDRESS>")
+            print("client_beta.py -s <RMQ_SERVER_ADDRESS>")
             sys.exit(2)
     if(len(opts) < 1):
         print("Usage:")
-        print("bridge.py -s <RMQ_SERVER_ADDRESS>")
+        print("client_beta.py -s <RMQ_SERVER_ADDRESS>")
     for opt, arg in opts:
             if opt == "-s":
                     RMQ_server_address = arg
@@ -29,5 +29,8 @@ def main():
     #print board
     #deploy
     #print board
+    #main loop:
+        #take turn
+        #wait for turn
 if __name__ == "__main__":
     main()
