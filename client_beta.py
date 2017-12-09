@@ -11,6 +11,7 @@ import rmq_params
 player1_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
 player2_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
 gameBoard = None
+connection = None
 channel = None
 playerNum = ""
 
@@ -37,7 +38,6 @@ def getPlayerNum():
         print("client_beta.py -u '<player#>''")
     for opt, arg in opts:
         if opt == "-u":
-            global channel
             playerNum = arg
             print(playerNum)
 
@@ -46,24 +46,33 @@ def grabBoard(ch, method, properties, body):
     gameBoard = json.loads(body)
     print(gameBoard)
 
+def mainMenu():
+    while True:
+        i = input("Type 'play' to play")
+        if i == 'play':
+            break
+
 def main():
     #TODO
+    #Get the player number, ie. 'player1' or 'player2'
+    #Will remove after beta
     getPlayerNum()
     #Get RMQ server address
     #print and get login info
     #connect to rmq
     connectRMQ()
     #print command line (accepting only 'play') ~!concept of a main menu.
+    mainMenu()
     #connect to game exchange
     channel.basic_publish(exchange='apptoserver',
                           routing_key='server',
                           body=playerNum)
+    #wait for other player to connect to game
+    #print board
     channel.basic_consume(grabBoard,
                           queue=playerNum,
                           no_ack=True)
     channel.start_consuming()
-    #wait for other player to connect to game
-    #print board
     #deploy
     #print board
     #main loop:
