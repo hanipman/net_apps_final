@@ -50,14 +50,14 @@ def mainMenu():
         if i == 'play':
             break
 
-def printBoard():
+def grabBoard():
     global consumer_id
-    consumer_id = channel.basic_consume(grabBoard,
+    consumer_id = channel.basic_consume(printBoard,
                                         queue=playerNum,
                                         no_ack=True)
     channel.start_consuming()
 
-def grabBoard(ch, method, properties, body):
+def printBoard(ch, method, properties, body):
     global gameBoard
     gameBoard = json.loads(body)
     print(gameBoard)
@@ -83,7 +83,7 @@ def main():
     connectToServer()
     #wait for other player to connect to game
     #print board
-    printBoard()
+    grabBoard()
     #deploy
     #print board
     #main loop:
