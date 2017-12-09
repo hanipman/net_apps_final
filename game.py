@@ -3,8 +3,6 @@
 #imports
 import random
 import rmq_params
-import sys
-import getopt
 import pika
 #import testGame
 
@@ -14,14 +12,13 @@ player2_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
 player1_vision = set()
 player2_vision = set()
 gameBoard = None
-RMQ_server_address = None
 gameOver = False
 channel = None
 
 def connectRMQ():
     global channel
     login = pika.PlainCredentials(rmq_params.rmq_params["username"], rmq_params.rmq_params["password"])
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RMQ_server_address, credentials=login, virtual_host=rmq_params.rmq_params["vhost"]))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(rmq_params.rmq_params["bridgeip"], credentials=login, virtual_host=rmq_params.rmq_params["vhost"]))
     channel = connection.channel()
     return None
 
@@ -266,7 +263,6 @@ def setPlayerVision(players_units):
                     vision = vision | setVisionFromStatAndPos(3, sloc, False)
     return vision
         
-            
 
 def takeTurns():
     #TODO wait to receive message, which will be from P1
@@ -274,10 +270,10 @@ def takeTurns():
         #if(warriorMoveValid()):
            # executeWarriorMove(play1_player1)
            return None
-       
+     
+#Turner's Code
 def processMoves(unit, currentLoc, targetLoc):
     return None
- 
  
 def checkValidMove(unit, loc) :
      if(loc in gameBoard) :
@@ -447,10 +443,11 @@ def printBoardP1():
         row.clear()
 
 def randomGeo():
-    geo = ['plains', 'plains','forest', 'mountain', 'lake']
+    geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable 
     return random.choice(geo)
 
 def createBoard():
+    #TODO if we have time, make an algorithm that prevents problems with the board. Like mountains all across the middle
     global gameBoard
     board = {}
     letters = 'ABCDEFGH'
@@ -550,25 +547,8 @@ def deployPlayerCommandLine(player):
         #player2
         for unit in units:
             deployP2UnitFromCommandLine(unit)
-            
-def getRMQ_server_address():
-    global RMQ_server_address
-    
-    #Get RMQ_server_address
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],"s:")
-    except getopt.GetoptError:
-            print("bridge.py -s <RMQ_SERVER_ADDRESS>")
-            sys.exit(2)
-    if(len(opts) < 1):
-        print("Usage:")
-        print("bridge.py -s <RMQ_SERVER_ADDRESS>")
-    for opt, arg in opts:
-            if opt == "-s":
-                    RMQ_server_address = arg
 
 def main():
-    getRMQ_server_address()
     connectRMQ()
     createBoard()
     printBoardP1()#TODO push gameBoard through message queue

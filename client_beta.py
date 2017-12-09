@@ -1,23 +1,6 @@
 #This file serves as a command line based client
 #As we approach the final iteration, we'll be implementing this
 #in the Android environment
-import sys
-import getopt
-def getRMQ_server_address():
-    global RMQ_server_address
-    
-    #Get RMQ_server_address
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],"s:")
-    except getopt.GetoptError:
-            print("client_beta.py -s <RMQ_SERVER_ADDRESS>")
-            sys.exit(2)
-    if(len(opts) < 1):
-        print("Usage:")
-        print("client_beta.py -s <RMQ_SERVER_ADDRESS>")
-    for opt, arg in opts:
-            if opt == "-s":
-                    RMQ_server_address = arg
 def main():
     #TODO
     #Get RMQ server address
