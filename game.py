@@ -1,11 +1,10 @@
-#This module handles the game mechanics
+#This module handles the game mechanics and communicates with the bridge Pi using RMQ
 
 #imports
 import random
 import rmq_params
 import pika
 import json
-#import testGame
 
 #define globals
 player1_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
@@ -16,6 +15,7 @@ gameBoard = None
 gameOver = False
 channel = None
 
+#Put the bridge's ip into the rmq_params file
 def connectRMQ():
     global channel
     login = pika.PlainCredentials(rmq_params.rmq_params["username"], rmq_params.rmq_params["password"])
@@ -23,6 +23,8 @@ def connectRMQ():
     channel = connection.channel()
     return None
 
+#returns a set of the spaces a unit could see from the range they can see, 
+#the pos on the board, and is the unit a Ranger in a forest? True or False
 def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
     vision = set()
     stopUp = False
@@ -228,7 +230,7 @@ def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
     return vision
 
 
-
+#returns a set containing a player's vision, given their units' positions
 def setPlayerVision(players_units):
     vision = set()
     wloc = players_units['warrior']
@@ -299,8 +301,9 @@ def checkVisionBonus(unit, loc):
         return True
     else:
         return False
+#######################################
 
-
+#Sets player vision from deployment details
 def afterDeployInit():
     global player1_units
     global player2_units
@@ -312,9 +315,25 @@ def afterDeployInit():
     print("Player1's Vision = " + str(player1_vision))
     print("Player2's Vision = " + str(player2_vision))
 
+#Produces proper RMQ board
+#For now it does a commandLine print of the board in this format:
+#   12345678
+#
+#A  RWlmlffm
+#B  llsfplfl
+#C  lffmfpmp
+#D  pmpflplm
+#E  lfflpflm
+#F  mfpfmfpf
+#G  wfSlmpfp
+#H  fmmplRpm
+#
+#Where m=mountain;l=lake;f=forest;p=plains;s=sorceress;r=ranger;w=warrior
+#A unit capitalized means that it is in its respective bonus-granting geo-location
+#e.g. W in m, w in p or f
 def printBoardP2():
     #TODO P2 units status message on RMQ
-    #CommandLine print TODO: move into CommandLine client code
+    #CommandLine print
     row =[]
     letters = 'ABCDEFGH'
     numbers = '12345678'
@@ -447,6 +466,7 @@ def randomGeo():
     geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
 
+#Assigns the gameBoard dictionary {spaceLocation:randomGeo}
 def createBoard():
     #TODO if we have time, make an algorithm that prevents problems with the board. Like mountains all across the middle
     global gameBoard
@@ -509,6 +529,8 @@ def unitCanEnterSpace(unit, pos):
         else:
             return False
 
+
+##############################TEMPORARY FUNCTIONS BEING USED FOR BETA#####################################
 def deployP1UnitFromCommandLine(unit):
     global player1_units
     while(player1_units[unit] == 'DEPLOY'):
@@ -548,6 +570,8 @@ def deployPlayerCommandLine(player):
         #player2
         for unit in units:
             deployP2UnitFromCommandLine(unit)
+            
+############################################################################################
 
 ####   RabbitMQ Stuff ####
 
