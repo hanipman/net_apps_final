@@ -275,40 +275,121 @@ def takeTurns():
            return None
 
 #Turner's Code
+def blockForResponse(player) :
+    method_frame, header_frame, body = channel.basic_get(player)
+    if method_frame:
+        return body;
+        #print method_frame, header_frame, body
+        #channel.basic_ack(method_frame.delivery_tag)
+    else:
+        blockForRespone(player)
+
+def getTargetLoc(received):
+    #extract target location from the message
+    #*******NEEDS COMPLETION AFTER FORMAT DECIDED*****
+    return None;
+
 def showAvailableMovement(unit, currentLoc) :
     #transmit over RMQ the  immediately adjacent and current positions
-    msg = "a: ";
+    available = set()
     row = currentLoc[0]
     col = currentLoc[1]
     #this spot
-    msg += "[" + currentLoc + "]";
+    available.add(currentLoc);
     #up
     space = chr(ord(row)-1)+col
     if(checkValidMove(unit, space)):
-        msg += ", [" + space + "]"
+        available.add(space)
     #right
     space = row+str(int(col)+1)
     if(checkValidMove(unit, space)):
-        msg += ", [" + space + "]"
+        available.add(space)
     #down
     space = chr(ord(row)+1)+col
     if(checkValidMove(unit, space)):
-        msg += ", [" + space + "]"
+        available.add(space)
     #left
     space = row+str(int(col)-1)
     if(checkValidMove(unit, space)):
-        msg += ", [" + space + "]"
+        available.add(space)
     return msg
 
-def processMoves(player, unit, currentLoc):
+def processMoves(player, unit):
+    currentLoc = None;
+    if(player == 'player1') :
+        currentLoc = player1_units[unit];
+    else :
+        currentLoc = player2_units[unit];
     #show the available movements for the unit
     availableMoves = showAvailableMovement(unit, currentLoc);
     #wait for a selection from the app
+    received = blockForResponse()
+    #extract choice from the received message
+    targetLoc = getTargetLoc(received);
     #move the unit in the server
     moveUnit(player, unit, targetLoc);
     #report new unit positions
+    #*******
     #report new unit vision
+    #*******
     return None
+
+def getDistance(pointA, pointB): 
+    AY = ord(pointA[0])
+    AX = pointA[1]
+    BY = ord(pointB[0])
+    BX = pointB[1]
+    diffY = AY - BY;
+    diffX = AX - BX;
+    totalDiff = (diffY**2 + diffX**2)**(0.5)
+    if(totalDiff % 1 != 0) :
+        totalDiff++;
+    return int(totalDiff)
+
+
+def showAvailableTargets(player, unit, currentLoc) :
+    myVisibility = None;
+    enemyUnits = None;
+    attackRange = 0;
+    if(player == 'player1') :
+        myVisibility = player1_vision;
+        enemyUnits = player2_units;
+    else :
+        myVisibility = player2_vision;
+        enemyUnits = player1_units;
+    if(unit == 'warrior') :
+        attackRange = 0;    #must be on the unit it wants to kill
+    elif(unit == 'ranger') :
+        attackRange = 3;
+    else:
+        attackRange = 2;
+    #check if there are units in range and vision
+    targets = set()
+    for position in enemyUnits :
+        if(position in myVisibility) :
+            targets.add(position);
+    return targets
+
+def processCombat(player, unit) :
+    currentLoc = None;
+    if(player == 'player1') :
+        currentLoc = player1_units[unit];
+    else :
+        currentLoc = player2_units[unit];
+    #show targetable units
+    availableTargets = showAvailableTargets(player, unit, currentLoc);
+    #send targets
+    #wait for selection from app
+    #target = getTarget()
+    #kill them dead in the face
+    #if(player == 'player1'):
+    #   player2_units[target] = 'DEAD'
+    #   if(target == unit):
+    #       player1_units[unit] = 'DEAD'
+    #else:
+    #   player1_units[target] = 'DEAD'
+    #   if(target == unit):
+    #       player2_units[unit] = 'DEAD'
 
 def checkValidMove(unit, loc) :
     if(loc in gameBoard) :
