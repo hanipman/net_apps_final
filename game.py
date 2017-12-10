@@ -305,8 +305,6 @@ def checkVisionBonus(unit, loc):
 
 #Sets player vision from deployment details
 def afterDeployInit():
-    global player1_units
-    global player2_units
     global player1_vision
     global player2_vision
     player1_vision = setPlayerVision(player1_units)
@@ -618,14 +616,61 @@ def checkIfPlayersConnected():
         consumer_id = channel.basic_consume(on_message, queue='server', no_ack=True)
         channel.start_consuming()
 
+
+#def game_message(ch, method, properties, body):
+    #body = str(body)
+    #temp = body[0:1]
+    ##movement
+    #if temp == "m":
+        
+    ##vision
+    #elif temp == "v":
+        
+    ##combat
+    #elif temp == "c":
+
+#def handleGame():
+    #while gameOver == False:
+        #global consumer_id
+        #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
+        #channel.start_consuming()
+        
+def deploy_message(ch, method, properties, body):
+    body = json.loads(body)
+    if('1w' in body):
+        space = body['1w']
+        player1_units['warrior'] = space
+    elif('1r' in body):
+        space = body['1r']
+        player1_units['ranger'] = space
+    elif('1s' in body):
+        space = body['1s']
+        player1_units['sorceress'] = space
+    elif('2w' in body):
+        space = body['2w']
+        player2_units['warrior'] = space
+    elif('2r' in body):
+        space = body['2r']
+        player2_units['ranger'] = space
+    elif('2s' in body):
+        space = body['2s']
+        player2_units['sorceress'] = space
+    if(player1_units['warrior'] != 'DEPLOY' and player1_units['ranger'] != 'DEPLOY' and player1_units['sorceress'] != 'DEPLOY' and player2_units['warrior'] != 'DEPLOY' and player2_units['ranger'] != 'DEPLOY' and player2_units['sorceress'] != 'DEPLOY'):
+        channel.basic_cancel(consumer_tag=consumer_id)
+        
+def handleDeployment():
+    while (player1_units['warrior'] == 'DEPLOY' or player1_units['ranger'] == 'DEPLOY' or player1_units['sorceress'] == 'DEPLOY' or player2_units['warrior'] == 'DEPLOY' or player2_units['ranger'] == 'DEPLOY' or player2_units['sorceress'] == 'DEPLOY'):
+        global consumer_id
+        consumer_id = channel.basic_consume(deploy_message, queue='server', no_ack=True)
+        channel.start_consuming()
+        
 ###########################
 
 def main():
     connectRMQ()
     checkIfPlayersConnected();
     createBoard()
-    printBoardP1()#TODO push gameBoard through message queue
-    #printBoardP2()
+    #push gameBoard through message queue
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
@@ -634,11 +679,10 @@ def main():
                           routing_key='player2',
                           body=json.dumps(gameBoard),
                           properties=pika.BasicProperties(delivery_mode = 2))
-    deployPlayerCommandLine('player1')#TODO deploy through RMQ
-    deployPlayerCommandLine('player2')
+    handleDeployment()
+    #deployPlayerCommandLine('player1')#TODO deploy through RMQ
+    #deployPlayerCommandLine('player2')
     afterDeployInit()
-    printBoardP1()
-    printBoardP2()
     #while(~gameOver):
         #takeTurns()
     #TODO ShowEndResults()
