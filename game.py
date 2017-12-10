@@ -652,7 +652,7 @@ def checkIfPlayersConnected():
         #channel.start_consuming()
         
 def deploy_message(ch, method, properties, body):
-    body = json.loads(body)
+    body = json.loads(str(body))
     if('1w' in body):
         space = body['1w']
         player1_units['warrior'] = space

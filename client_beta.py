@@ -136,7 +136,6 @@ def deployP1UnitFromCommandLine(unit):
                     player1_units[unit] = p1Deploy
                     deployInfo = {}
                     deployInfo['1'+unit[0]] = p1Deploy
-                    print(deployInfo)
                     channel.basic_publish(exchange='apptoserver',
                                           routing_key='server',
                                           body=json.dumps(deployInfo),
@@ -158,7 +157,6 @@ def deployP2UnitFromCommandLine(unit):
                     player2_units[unit] = p2Deploy
                     deployInfo = {}
                     deployInfo['2'+unit[0]] = p2Deploy
-                    print(deployInfo)
                     channel.basic_publish(exchange='apptoserver',
                                           routing_key='server',
                                           body=json.dumps(deployInfo),
