@@ -275,24 +275,59 @@ def takeTurns():
            return None
 
 #Turner's Code
-def processMoves(unit, currentLoc, targetLoc):
+def showAvailableMovement(unit, currentLoc) :
+    #transmit over RMQ the  immediately adjacent and current positions
+    msg = "a: ";
+    row = currentLoc[0]
+    col = currentLoc[1]
+    #this spot
+    msg += "[" + currentLoc + "]";
+    #up
+    space = chr(ord(row)-1)+col
+    if(checkValidMove(unit, space)):
+        msg += ", [" + space + "]"
+    #right
+    space = row+str(int(col)+1)
+    if(checkValidMove(unit, space)):
+        msg += ", [" + space + "]"
+    #down
+    space = chr(ord(row)+1)+col
+    if(checkValidMove(unit, space)):
+        msg += ", [" + space + "]"
+    #left
+    space = row+str(int(col)-1)
+    if(checkValidMove(unit, space)):
+        msg += ", [" + space + "]"
+    return msg
+
+def processMoves(player, unit, currentLoc):
+    #show the available movements for the unit
+    availableMoves = showAvailableMovement(unit, currentLoc);
+    #wait for a selection from the app
+    #move the unit in the server
+    moveUnit(player, unit, targetLoc);
+    #report new unit positions
+    #report new unit vision
     return None
 
 def checkValidMove(unit, loc) :
-     if(loc in gameBoard) :
+    if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
-             if(unit == 'warrior'):
-                 return True;
-             else:
-                 return False;
-        elif (gameBoard[loc] == 'forest') :
-                 if(unit == 'ranger') :
-                     return True;
-                 else:
-                     return False
+            if(unit == 'warrior'):
+                return True;
+            else:
+                return False;
         elif (gameBoard[loc] == 'lake') :
             if(unit == 'sorceress'):
                 return True;
+        else:
+            return True;
+
+def moveUnit(player, unit, newLoc) :
+    if(player == 'player1'):
+        player1_units[unit] = newLoc;
+    else:
+        player2_units[unit] = newLoc;
 
 def checkVisionBonus(unit, loc):
     if(gameBoard[loc] == 'plains'):
@@ -511,25 +546,6 @@ def isEmptySpace(pos):
     else:
         return False
 
-#checks if unit can go into space
-def unitCanEnterSpace(unit, pos):
-    if(unit == 'warrior'):
-        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'mountain' or gameBoard[pos] == 'forest'):
-            return True
-        else:
-            return False
-    elif(unit == 'ranger'):
-        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest'):
-            return True
-        else:
-            return False
-    else:
-        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest' or gameBoard[pos] == 'lake'):
-            return True
-        else:
-            return False
-
-
 ##############################TEMPORARY FUNCTIONS BEING USED FOR BETA#####################################
 def deployP1UnitFromCommandLine(unit):
     global player1_units
@@ -538,7 +554,7 @@ def deployP1UnitFromCommandLine(unit):
         if(checkInDeploymentZone('player1', p1Deploy) == False):
             print("Pick a space in the first 2 rows")
         else:
-            if(unitCanEnterSpace(unit, p1Deploy) == False):
+            if(checkValidMove(unit, p1Deploy) == False):
                 print("Unit cannot enter "+p1Deploy)
             else:
                 if(isEmptySpace(p1Deploy) == False):
@@ -553,7 +569,7 @@ def deployP2UnitFromCommandLine(unit):
         if(checkInDeploymentZone('player2', p2Deploy) == False):
             print("Pick a space in the first 2 rows")
         else:
-            if(unitCanEnterSpace(unit, p2Deploy) == False):
+            if(checkValidMove(unit, p2Deploy) == False):
                 print("Unit cannot enter "+p2Deploy)
             else:
                 if(isEmptySpace(p2Deploy) == False):
