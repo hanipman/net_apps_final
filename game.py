@@ -267,13 +267,6 @@ def setPlayerVision(players_units):
     return vision
 
 
-def takeTurns():
-    #TODO wait to receive message, which will be from P1
-    #if(play1_player1.keys() == 'warrior'):
-        #if(warriorMoveValid()):
-           # executeWarriorMove(play1_player1)
-           return None
-
 #Turner's Code
 def blockForResponse(player) :
     method_frame, header_frame, body = channel.basic_get(player)
@@ -442,6 +435,7 @@ def checkVisionBonus(unit, loc):
         return True
     else:
         return False
+    
 #######################################
 
 #Sets player vision from deployment details
@@ -708,9 +702,9 @@ def callback(ch, method, properties, body):
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body='response')
-    channel.basic_publish(exchange='apptoserver',
-                          routing_key='player1',
-                          body='response')
+    #channel.basic_publish(exchange='apptoserver',
+                          #routing_key='player1',
+                          #body='response')
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player2',
                           body='response')
@@ -739,23 +733,21 @@ def checkIfPlayersConnected():
         channel.start_consuming()
 
 
-#def game_message(ch, method, properties, body):
-    #body = str(body)
-    #temp = body[0:1]
-    ##movement
-    #if temp == "m":
-        
-    ##vision
-    #elif temp == "v":
+def game_message(ch, method, properties, body):
+    body = json.loads(body.decode())
+    key = body.keys().pop()
+    print(key)
+    #movement
+    if key[0] == "m":
         
     ##combat
     #elif temp == "c":
 
-#def handleGame():
-    #while gameOver == False:
-        #global consumer_id
-        #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
-        #channel.start_consuming()
+def handleGame():
+    while gameOver == False:
+        global consumer_id
+        consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
+        channel.start_consuming()
         
 def deploy_message(ch, method, properties, body):
     body = json.loads(body.decode())
@@ -805,8 +797,7 @@ def main():
     #deployPlayerCommandLine('player1')#TODO deploy through RMQ
     #deployPlayerCommandLine('player2')
     afterDeployInit()
-    #while(~gameOver):
-        #takeTurns()
+    handleGame()
     #TODO ShowEndResults()
 
 if __name__ == "__main__":
