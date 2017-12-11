@@ -336,7 +336,7 @@ def getDistance(pointA, pointB):
     diffX = AX - BX;
     totalDiff = (diffY**2 + diffX**2)**(0.5)
     if(totalDiff % 1 != 0) :
-        totalDiff++;
+        totalDiff += 1
     return int(totalDiff)
 
 

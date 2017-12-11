@@ -7,6 +7,7 @@ import json
 import getopt
 import sys
 import rmq_params
+from collections import OrderedDict
 
 player1_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
 player2_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
@@ -60,7 +61,8 @@ def grabBoard():
 def printBoard(ch, method, properties, body):
     global gameBoard
     gameBoard = json.loads(body)
-    print(gameBoard)
+    temp = OrderedDict(sorted(gameBoard.items()))
+    print(temp)
     channel.basic_cancel(consumer_tag=consumer_id)
 
 def connectToServer():
