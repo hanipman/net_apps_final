@@ -271,7 +271,7 @@ def setPlayerVision(players_units):
 def blockForResponse(player) :
     method_frame, header_frame, body = channel.basic_get(player)
     if method_frame:
-        return body;
+        return body
         #print method_frame, header_frame, body
         #channel.basic_ack(method_frame.delivery_tag)
     else:
@@ -280,7 +280,7 @@ def blockForResponse(player) :
 def getTargetLoc(received):
     #extract target location from the message
     #*******NEEDS COMPLETION AFTER FORMAT DECIDED*****
-    return None;
+    return None
 
 def showAvailableMovement(unit, currentLoc) :
     #transmit over RMQ the  immediately adjacent and current positions
@@ -288,7 +288,7 @@ def showAvailableMovement(unit, currentLoc) :
     row = currentLoc[0]
     col = currentLoc[1]
     #this spot
-    available.add(currentLoc);
+    available.add(currentLoc)
     #up
     space = chr(ord(row)-1)+col
     if(checkValidMove(unit, space)):
@@ -308,19 +308,19 @@ def showAvailableMovement(unit, currentLoc) :
     return msg
 
 def processMoves(player, unit):
-    currentLoc = None;
+    currentLoc = None
     if(player == 'player1') :
-        currentLoc = player1_units[unit];
+        currentLoc = player1_units[unit]
     else :
-        currentLoc = player2_units[unit];
+        currentLoc = player2_units[unit]
     #show the available movements for the unit
-    availableMoves = showAvailableMovement(unit, currentLoc);
+    availableMoves = showAvailableMovement(unit, currentLoc)
     #wait for a selection from the app
     received = blockForResponse()
     #extract choice from the received message
-    targetLoc = getTargetLoc(received);
+    targetLoc = getTargetLoc(received)
     #move the unit in the server
-    moveUnit(player, unit, targetLoc);
+    moveUnit(player, unit, targetLoc)
     #report new unit positions
     #*******
     #report new unit vision
@@ -332,45 +332,45 @@ def getDistance(pointA, pointB):
     AX = pointA[1]
     BY = ord(pointB[0])
     BX = pointB[1]
-    diffY = AY - BY;
-    diffX = AX - BX;
+    diffY = AY - BY
+    diffX = AX - BX
     totalDiff = (diffY**2 + diffX**2)**(0.5)
     if(totalDiff % 1 != 0) :
-        totalDiff++;
+        totalDiff = totalDiff + 1
     return int(totalDiff)
 
 
 def showAvailableTargets(player, unit, currentLoc) :
-    myVisibility = None;
-    enemyUnits = None;
-    attackRange = 0;
+    myVisibility = None
+    enemyUnits = None
+    attackRange = 0
     if(player == 'player1') :
-        myVisibility = player1_vision;
-        enemyUnits = player2_units;
+        myVisibility = player1_vision
+        enemyUnits = player2_units
     else :
-        myVisibility = player2_vision;
-        enemyUnits = player1_units;
+        myVisibility = player2_vision
+        enemyUnits = player1_units
     if(unit == 'warrior') :
-        attackRange = 0;    #must be on the unit it wants to kill
+        attackRange = 0    #must be on the unit it wants to kill
     elif(unit == 'ranger') :
-        attackRange = 3;
+        attackRange = 3
     else:
-        attackRange = 2;
+        attackRange = 2
     #check if there are units in range and vision
     targets = set()
     for position in enemyUnits :
         if(position in myVisibility) :
-            targets.add(position);
+            targets.add(position)
     return targets
 
 def processCombat(player, unit) :
-    currentLoc = None;
+    currentLoc = None
     if(player == 'player1') :
-        currentLoc = player1_units[unit];
+        currentLoc = player1_units[unit]
     else :
-        currentLoc = player2_units[unit];
+        currentLoc = player2_units[unit]
     #show targetable units
-    availableTargets = showAvailableTargets(player, unit, currentLoc);
+    availableTargets = showAvailableTargets(player, unit, currentLoc)
     #send targets
     #wait for selection from app
     #target = getTarget()
@@ -388,20 +388,20 @@ def checkValidMove(unit, loc) :
     if(loc in gameBoard) :
         if(gameBoard[loc] == 'mountain') :
             if(unit == 'warrior'):
-                return True;
+                return True
             else:
-                return False;
+                return False
         elif (gameBoard[loc] == 'lake') :
             if(unit == 'sorceress'):
-                return True;
+                return True
         else:
-            return True;
+            return True
 
 def moveUnit(player, unit, newLoc) :
     if(player == 'player1'):
-        player1_units[unit] = newLoc;
+        player1_units[unit] = newLoc
     else:
-        player2_units[unit] = newLoc;
+        player2_units[unit] = newLoc
 
 def checkVisionBonus(unit, loc):
     if(gameBoard[loc] == 'plains'):
@@ -436,7 +436,7 @@ def afterDeployInit():
 #G  wfSlmpfp
 #H  fmmplRpm
 #
-#Where m=mountain;l=lake;f=forest;p=plains;s=sorceress;r=ranger;w=warrior
+#Where m=mountainl=lakef=forestp=plainss=sorceressr=rangerw=warrior
 #A unit capitalized means that it is in its respective bonus-granting geo-location
 #e.g. W in m, w in p or f
 def printBoardP2():
@@ -708,21 +708,21 @@ def checkIfPlayersConnected():
         channel.start_consuming()
 
 
-def game_message(ch, method, properties, body):
-    body = json.loads(body.decode())
-    key = body.keys().pop()
-    print(key)
-    #movement
-    if key[0] == "m":
+#def game_message(ch, method, properties, body):
+    #body = json.loads(body.decode())
+    #key = body.keys().pop()
+    #print(key)
+    ##movement
+    #if key[0] == "m":
         
-    ##combat
-    #elif temp == "c":
-
-def handleGame():
-    while gameOver == False:
-        global consumer_id
-        consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
-        channel.start_consuming()
+    ###combat
+    ##elif temp == "c":
+    
+#def handleGame():
+    #while gameOver == False:
+        #global consumer_id
+        #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
+        #channel.start_consuming()
         
 def deploy_message(ch, method, properties, body):
     body = json.loads(body.decode())
@@ -757,7 +757,7 @@ def handleDeployment():
 
 def main():
     connectRMQ()
-    checkIfPlayersConnected();
+    checkIfPlayersConnected()
     createBoard()
     #push gameBoard through message queue
     channel.basic_publish(exchange='apptoserver',
@@ -772,7 +772,7 @@ def main():
     #deployPlayerCommandLine('player1')#TODO deploy through RMQ
     #deployPlayerCommandLine('player2')
     afterDeployInit()
-    handleGame()
+    #handleGame()
     #TODO ShowEndResults()
 
 if __name__ == "__main__":
