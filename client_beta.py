@@ -16,6 +16,7 @@ connection = None
 channel = None
 consumer_id = None
 playerNum = ""
+vision = set()
 
 def getPlayerNum():
     global playerNum
@@ -30,7 +31,6 @@ def getPlayerNum():
         print("client_beta.py -u '<player#>''")
     for opt, arg in opts:
         if opt == "-u":
-            print(arg)
             if arg == 'player1' or arg == 'player2':
                 playerNum = arg
             else:
@@ -69,6 +69,22 @@ def connectToServer():
     channel.basic_publish(exchange='apptoserver',
                           routing_key='server',
                           body=playerNum)
+    
+##################################VISION#############################################
+def getVision():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignVision,
+                                        queue=playerNum,
+                                        no_ack=True)
+    channel.start_consuming()
+
+def assignVision(ch, method, properties, body):
+    global vision
+    body = json.loads(body.decode())
+    vision = list(body.keys())
+    print(vision)
+    channel.basic_cancel(consumer_tag=consumer_id)
+####################################################################################
 
 ##################################DEPLOYMENT##########################################
 def checkInDeploymentZone(player, pos):
@@ -175,6 +191,7 @@ def deployPlayerCommandLine(player):
             deployP2UnitFromCommandLine(unit)
 def deploy():
     deployPlayerCommandLine(playerNum)
+    getVision()
     
 ##############################################################################
 

@@ -384,16 +384,16 @@ def showAvailableTargets(player, unit, currentLoc) :
 
 def processCombat(player, unit) :
     currentLoc = None
-            #Check if we're allowed to kill that
-            if(unit == 'warrior'):
-                if(position == ewloc or position == erloc):
-                    targets.add(position);
-            elif(unit == 'ranger'):
-                if(position == esloc or position == erloc):
-                    targets.add(position);
-            else:
-                if(position == ewloc or position == esloc):
-                    targets.add(position);
+        #Check if we're allowed to kill that
+    if(unit == 'warrior'):
+        if(position == ewloc or position == erloc):
+            targets.add(position);
+    elif(unit == 'ranger'):
+        if(position == esloc or position == erloc):
+            targets.add(position);
+    else:
+        if(position == ewloc or position == esloc):
+            targets.add(position);
     return targets
 
 def processCombat(player, unit) :
@@ -453,6 +453,27 @@ def checkVisionBonus(unit, loc):
     
 #######################################
 
+def PublishVision(player):
+    dict = {}
+    x = 0
+    if(player == 'player1'):
+        for each in player1_vision:
+            dict[each] = x
+            x = x+1
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player1',
+                            body=json.dumps(dict),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+    else:
+        #player2
+        for each in player2_vision:
+            dict[each] = x
+            x = x+1
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player2',
+                            body=json.dumps(dict),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+
 #Sets player vision from deployment details
 def afterDeployInit():
     global player1_vision
@@ -460,8 +481,8 @@ def afterDeployInit():
     player1_vision = setPlayerVision(player1_units)
     player2_vision = setPlayerVision(player2_units)
     #TODO vision message on RMQ
-    print("Player1's Vision = " + str(player1_vision))
-    print("Player2's Vision = " + str(player2_vision))
+    PublishVision('player1')
+    PublishVision('player2')
 
 #Produces proper RMQ board
 #For now it does a commandLine print of the board in this format:
@@ -660,20 +681,18 @@ def isEmptySpace(pos):
         return False
 
 ##############################TEMPORARY FUNCTIONS BEING USED FOR BETA#####################################
-def deployP1UnitFromCommandLine(unit):
+def deployP1UnitFromCommandLine(unit, p1Deploy):
     global player1_units
-    while(player1_units[unit] == 'DEPLOY'):
-        p1Deploy = input("Player 1: Where for "+unit)
-        if(checkInDeploymentZone('player1', p1Deploy) == False):
-            print("Pick a space in the first 2 rows")
+    if(checkInDeploymentZone('player1', p1Deploy) == False):
+        print("Pick a space in the first 2 rows")
+    else:
+        if(checkValidMove(unit, p1Deploy) == False):
+            print("Unit cannot enter "+p1Deploy)
         else:
-            if(checkValidMove(unit, p1Deploy) == False):
-                print("Unit cannot enter "+p1Deploy)
+            if(isEmptySpace(p1Deploy) == False):
+                print("Space is not empty "+p1Deploy)
             else:
-                if(isEmptySpace(p1Deploy) == False):
-                    print("Space is not empty "+p1Deploy)
-                else:
-                    player1_units[unit] = p1Deploy
+                player1_units[unit] = p1Deploy
 
 def deployP2UnitFromCommandLine(unit):
     global player2_units
@@ -799,7 +818,7 @@ def main():
     connectRMQ()
     checkIfPlayersConnected()
     createBoard()
-    #push gameBoard through message queue
+    #push gameBoard through message queue to both players
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
