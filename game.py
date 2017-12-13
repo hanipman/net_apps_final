@@ -275,7 +275,7 @@ def blockForResponse(player) :
         #print method_frame, header_frame, body
         #channel.basic_ack(method_frame.delivery_tag)
     else:
-        blockForRespone(player)
+        blockForResponse(player)
 
 def getTargetLoc(received):
     #extract target location from the message
@@ -288,7 +288,7 @@ def showAvailableMovement(unit, currentLoc) :
     row = currentLoc[0]
     col = currentLoc[1]
     #this spot
-    available.add(currentLoc)
+    #available.add(currentLoc) //shouldn't be able to move to loc you're already on
     #up
     space = chr(ord(row)-1)+col
     if(checkValidMove(unit, space)):
@@ -474,8 +474,8 @@ def PublishVision(player):
                             body=json.dumps(dict),
                             properties=pika.BasicProperties(delivery_mode = 2))
 
-#Sets player vision from deployment details
-def afterDeployInit():
+#Sets player vision
+def UpdateVision():
     global player1_vision
     global player2_vision
     player1_vision = setPlayerVision(player1_units)
@@ -694,20 +694,18 @@ def deployP1UnitFromCommandLine(unit, p1Deploy):
             else:
                 player1_units[unit] = p1Deploy
 
-def deployP2UnitFromCommandLine(unit):
+def deployP2UnitFromCommandLine(unit, p2Deploy):
     global player2_units
-    while(player2_units[unit] == 'DEPLOY'):
-        p2Deploy = input("Player 2: Where for "+unit)
-        if(checkInDeploymentZone('player2', p2Deploy) == False):
-            print("Pick a space in the first 2 rows")
+    if(checkInDeploymentZone('player2', p2Deploy) == False):
+        print("Pick a space in the first 2 rows")
+    else:
+        if(checkValidMove(unit, p2Deploy) == False):
+            print("Unit cannot enter "+p2Deploy)
         else:
-            if(checkValidMove(unit, p2Deploy) == False):
-                print("Unit cannot enter "+p2Deploy)
+            if(isEmptySpace(p2Deploy) == False):
+                print("Space is not empty "+p2Deploy)
             else:
-                if(isEmptySpace(p2Deploy) == False):
-                    print("Space is not empty "+p2Deploy)
-                else:
-                    player2_units[unit] = p2Deploy
+                player2_units[unit] = p2Deploy
 
 def deployPlayerCommandLine(player):
     units = ['warrior', 'ranger', 'sorceress']
@@ -767,42 +765,55 @@ def checkIfPlayersConnected():
         channel.start_consuming()
 
 
-#def game_message(ch, method, properties, body):
-    #body = json.loads(body.decode())
-    #key = body.keys().pop()
-    #print(key)
-    ##movement
-    #if key[0] == "m":
-        
-    ###combat
-    ##elif temp == "c":
+def game_message(ch, method, properties, body):
+    warriorSelected = False
+    rangerSelected = False
+    sorceressSelected = False
+    body = json.loads(body.decode())
+    key = body.keys().pop()
+    print(key)
+    #player 1
+    #if key[0] == '1':
+        #if key[1] == 'w':
+            ##selected warrior
+        #elif key[1] == 'r':
+            ##selected ranger
+        #elif key[1] == 's':
+            ##selected sorceress
+        #elif key [1] == 'm':
+            ##move
+        #elif key[1] == 'c':
+            ##combat
+    ##player 2
+    #else:
     
-#def handleGame():
-    #while gameOver == False:
-        #global consumer_id
-        #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
-        #channel.start_consuming()
+    
+def handleGame():
+    while gameOver == False:
+        global consumer_id
+        consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
+        channel.start_consuming()
         
 def deploy_message(ch, method, properties, body):
     body = json.loads(body.decode())
     if('1w' in body):
         space = body['1w']
-        player1_units['warrior'] = space
+        deployP1UnitFromCommandLine('warrior', space)
     elif('1r' in body):
         space = body['1r']
-        player1_units['ranger'] = space
+        deployP1UnitFromCommandLine('ranger', space)
     elif('1s' in body):
         space = body['1s']
-        player1_units['sorceress'] = space
+        deployP1UnitFromCommandLine('sorceress', space)
     elif('2w' in body):
         space = body['2w']
-        player2_units['warrior'] = space
+        deployP2UnitFromCommandLine('warrior', space)
     elif('2r' in body):
         space = body['2r']
-        player2_units['ranger'] = space
+        deployP2UnitFromCommandLine('ranger', space)
     elif('2s' in body):
         space = body['2s']
-        player2_units['sorceress'] = space
+        deployP2UnitFromCommandLine('sorceress', space)
     if(player1_units['warrior'] != 'DEPLOY' and player1_units['ranger'] != 'DEPLOY' and player1_units['sorceress'] != 'DEPLOY' and player2_units['warrior'] != 'DEPLOY' and player2_units['ranger'] != 'DEPLOY' and player2_units['sorceress'] != 'DEPLOY'):
         channel.basic_cancel(consumer_tag=consumer_id)
         
@@ -830,7 +841,7 @@ def main():
     handleDeployment()
     #deployPlayerCommandLine('player1')#TODO deploy through RMQ
     #deployPlayerCommandLine('player2')
-    afterDeployInit()
+    UpdateVision()
     #handleGame()
     #TODO ShowEndResults()
 
