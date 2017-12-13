@@ -322,7 +322,7 @@ def processMoves(player, unit):
     #move the unit in the server
     moveUnit(player, unit, targetLoc)
     #report new unit positions
-    #*******
+    sendUnitPositions(player)
     #report new unit vision
     #*******
     return None
@@ -336,11 +336,16 @@ def getDistance(pointA, pointB):
     diffX = AX - BX
     totalDiff = (diffY**2 + diffX**2)**(0.5)
     if(totalDiff % 1 != 0) :
+<<<<<<< HEAD
         totalDiff = totalDiff + 1
+=======
+        totalDiff += 1
+>>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     return int(totalDiff)
 
 
 def showAvailableTargets(player, unit, currentLoc) :
+<<<<<<< HEAD
     myVisibility = None
     enemyUnits = None
     attackRange = 0
@@ -350,6 +355,26 @@ def showAvailableTargets(player, unit, currentLoc) :
     else :
         myVisibility = player2_vision
         enemyUnits = player1_units
+=======
+    myVisibility = None;
+    enemyUnits = None;
+    attackRange = 0;
+    ewloc = None;
+    erloc = None;
+    esloc = None;
+    if(player == 'player1') :
+        ewloc = player2_units['warrior']
+        erloc = player2_units['ranger']
+        esloc = player2_units['sorceress']
+        myVisibility = player1_vision;
+        enemyUnits = player2_units;
+    else :
+        ewloc = player1_units['warrior']
+        erloc = player1_units['ranger']
+        esloc = player1_units['sorceress']
+        myVisibility = player2_vision;
+        enemyUnits = player1_units;
+>>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     if(unit == 'warrior') :
         attackRange = 0    #must be on the unit it wants to kill
     elif(unit == 'ranger') :
@@ -360,11 +385,32 @@ def showAvailableTargets(player, unit, currentLoc) :
     targets = set()
     for position in enemyUnits :
         if(position in myVisibility) :
+<<<<<<< HEAD
             targets.add(position)
     return targets
 
 def processCombat(player, unit) :
     currentLoc = None
+=======
+            #Check if we're allowed to kill that
+            if(unit == 'warrior'):
+                if(position == ewloc or position == erloc):
+                    targets.add(position);
+            elif(unit == 'ranger'):
+                if(position == esloc or position == erloc):
+                    targets.add(position);
+            else:
+                if(position == ewloc or position == esloc):
+                    targets.add(position);
+    return targets
+
+def processCombat(player, unit) :
+    global player2_units;
+    global player1_units;
+    #TODO*****
+    #   make it so Warriors try to attack when they move on someone
+    currentLoc = None;
+>>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     if(player == 'player1') :
         currentLoc = player1_units[unit]
     else :
@@ -372,17 +418,18 @@ def processCombat(player, unit) :
     #show targetable units
     availableTargets = showAvailableTargets(player, unit, currentLoc)
     #send targets
+    sendTargets(availableTargets)
     #wait for selection from app
-    #target = getTarget()
+    target = blockForResponse()
     #kill them dead in the face
-    #if(player == 'player1'):
-    #   player2_units[target] = 'DEAD'
-    #   if(target == unit):
-    #       player1_units[unit] = 'DEAD'
-    #else:
-    #   player1_units[target] = 'DEAD'
-    #   if(target == unit):
-    #       player2_units[unit] = 'DEAD'
+    if(player == 'player1'):
+        player2_units[target] = 'DEAD'
+        if(target == unit):
+            player1_units[unit] = 'DEAD'
+    else:
+        player1_units[target] = 'DEAD'
+        if(target == unit):
+            player2_units[unit] = 'DEAD'
 
 def checkValidMove(unit, loc) :
     if(loc in gameBoard) :
@@ -398,6 +445,8 @@ def checkValidMove(unit, loc) :
             return True
 
 def moveUnit(player, unit, newLoc) :
+    global player1_units;
+    global player2_units;
     if(player == 'player1'):
         player1_units[unit] = newLoc
     else:
