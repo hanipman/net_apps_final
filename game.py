@@ -1,4 +1,5 @@
 #This module handles the game mechanics and communicates with the bridge Pi using RMQ
+#MUST REPORT consumed moves, MUST REPORT response to be produced
 
 #imports
 import random
@@ -456,7 +457,7 @@ def checkVisionBonus(unit, loc):
 def PublishVision(player):
     dict = {}
     x = 0
-    if(player == 'player1'):
+    if(player == "player1"):
         for each in player1_vision:
             dict[each] = x
             x = x+1
@@ -473,6 +474,7 @@ def PublishVision(player):
                             routing_key='player2',
                             body=json.dumps(dict),
                             properties=pika.BasicProperties(delivery_mode = 2))
+    print("published vision for "+player+"\n")
 
 #Sets player vision
 def UpdateVision():
@@ -484,6 +486,7 @@ def UpdateVision():
     PublishVision('player1')
     PublishVision('player2')
 
+#######################################################PRINT BOARD#########################################################
 #Produces proper RMQ board
 #For now it does a commandLine print of the board in this format:
 #   12345678
@@ -631,6 +634,8 @@ def printBoardP1():
         print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
         row.clear()
 
+#########################################################################################################################
+
 def randomGeo():
     geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
@@ -764,36 +769,94 @@ def checkIfPlayersConnected():
         consumer_id = channel.basic_consume(on_message, queue='server', no_ack=True)
         channel.start_consuming()
 
-
+warriorSelectedForTurn = False
+rangerSelectedForTurn = False
+sorceressSelectedForTurn = False
 def game_message(ch, method, properties, body):
-    warriorSelected = False
-    rangerSelected = False
-    sorceressSelected = False
+    global warriorSelectedForTurn
+    global rangerSelectedForTurn
+    global sorceressSelectedForTurn
     body = json.loads(body.decode())
     key = body.keys().pop()
     print(key)
     #player 1
-    #if key[0] == '1':
-        #if key[1] == 'w':
-            ##selected warrior
-        #elif key[1] == 'r':
-            ##selected ranger
-        #elif key[1] == 's':
-            ##selected sorceress
+    if key[0] == '1':
+        if key[1] == 'w':
+            #selected warrior
+            warriorSelectedForTurn = True
+        elif key[1] == 'r':
+            #selected ranger
+            rangerSelectedForTurn = True
+        elif key[1] == 's':
+            #selected sorceress
+            sorceressSelectedForTurn = True
         #elif key [1] == 'm':
             ##move
         #elif key[1] == 'c':
-            ##combat
+            #combat
     ##player 2
     #else:
+def assignSelectedUnitForTurn(ch, method, properties, body):
+    global warriorSelectedForTurn
+    global rangerSelectedForTurn
+    global sorceressSelectedForTurn
+    body = body.decode()
+    print(body)
+    channel.basic_cancel(consumer_tag=consumer_id)
     
+def consumeWhichUnit():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignSelectedUnitForTurn, queue='server', no_ack=True)
+    channel.start_consuming()
     
+player1Turn = True
 def handleGame():
+    global player1Turn
     while gameOver == False:
-        global consumer_id
-        consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
-        channel.start_consuming()
-        
+        handleTurn()
+        player1Turn = not player1Turn
+        #global consumer_id
+        #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
+        #channel.start_consuming()
+
+def handleTurn():
+    if(player1Turn == True):
+        print('get here\n')
+        #player 1 turn
+        #tell player 1 it's their turn
+        notifyPlayerOfTurn('player1')
+        #consume message for which unit they'll play with this turn
+        consumeWhichUnit()
+        #for x in unit_movement
+            #produce available move spaces
+            #consume message for movement
+        #produce availabe combat spaces
+        #consume message for combat
+    #else:
+        ##player 2 turn
+
+def notifyPlayerOfTurn(player):
+    if(player == 'player1'):
+        print("made it here\n")
+        channel.basic_publish(exchange='apptoserver',
+                          routing_key='player1',
+                          body='player1',
+                          properties=pika.BasicProperties(delivery_mode = 2))
+        print("first publish\n")
+        channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body='player1',
+                          properties=pika.BasicProperties(delivery_mode = 2))
+        print("second publish \n")
+    else:
+        #player 2
+        channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body='player2')
+        channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body='player2')
+
 def deploy_message(ch, method, properties, body):
     body = json.loads(body.decode())
     if('1w' in body):
@@ -822,6 +885,19 @@ def handleDeployment():
         global consumer_id
         consumer_id = channel.basic_consume(deploy_message, queue='server', no_ack=True)
         channel.start_consuming()
+    publishUnitInfo()
+    
+
+def publishUnitInfo():
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player1',
+                          body=json.dumps(player2_units),
+                          properties=pika.BasicProperties(delivery_mode = 2))
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='player2',
+                          body=json.dumps(player1_units),
+                          properties=pika.BasicProperties(delivery_mode = 2))
+    print("published unit info\n")
         
 ###########################
 
@@ -842,7 +918,7 @@ def main():
     #deployPlayerCommandLine('player1')#TODO deploy through RMQ
     #deployPlayerCommandLine('player2')
     UpdateVision()
-    #handleGame()
+    handleGame()
     #TODO ShowEndResults()
 
 if __name__ == "__main__":

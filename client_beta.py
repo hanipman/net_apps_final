@@ -17,6 +17,7 @@ channel = None
 consumer_id = None
 playerNum = ""
 vision = set()
+playerTurn = False
 
 def getPlayerNum():
     global playerNum
@@ -60,9 +61,8 @@ def grabBoard():
 
 def printBoard(ch, method, properties, body):
     global gameBoard
-    gameBoard = json.loads(body)
-    temp = OrderedDict(sorted(gameBoard.items()))
-    print(temp)
+    gameBoard = json.loads(body.decode())
+    printBoardCMD()
     channel.basic_cancel(consumer_tag=consumer_id)
 
 def connectToServer():
@@ -70,23 +70,159 @@ def connectToServer():
                           routing_key='server',
                           body=playerNum)
     
-##################################VISION#############################################
+    
+    
+###########################################CMDLINE PRINT BOARD#########################################################
+def printBoardCMD():
+    #player 1
+    if(playerNum == 'player1'):
+        #CommandLine print
+        row =[]
+        letters = 'ABCDEFGH'
+        numbers = '12345678'
+        print('  '+numbers)
+        wloc = player1_units['warrior']
+        rloc = player1_units['ranger']
+        sloc = player1_units['sorceress']
+        otherWloc = player2_units['warrior']
+        otherRloc = player2_units['ranger']
+        otherSloc = player2_units['sorceress']
+        for let in letters:
+            for num in numbers:
+                skipSpace = False
+                if(let+num in vision):
+                    if(let+num == otherWloc):
+                        skipSpace = True
+                        if(gameBoard[let+num] == 'mountain'):
+                            row.append('W')
+                        else:
+                            row.append('w')
+                    elif(let+num == otherRloc):
+                        skipSpace = True
+                        if(gameBoard[let+num] == 'forest'):
+                            row.append('R')
+                        else:
+                            row.append('r')
+                    elif(let+num == otherSloc):
+                        skipSpace = True
+                        if(gameBoard[let+num] == 'lake'):
+                            row.append('S')
+                        else:
+                            row.append('s')
+                if(skipSpace == False):
+                    if(gameBoard[let+num] == 'plains'):
+                        if(let+num == wloc):
+                            row.append('w')
+                        elif(let+num == rloc):
+                            row.append('r')
+                        elif(let+num == sloc):
+                            row.append('s')
+                        else:
+                            row.append('p')
+                    elif(gameBoard[let+num] == 'mountain'):
+                        if(let+num == wloc):
+                            row.append('W')
+                        else:
+                            row.append('m')
+                    elif(gameBoard[let+num] == 'forest'):
+                        if(let+num == wloc):
+                            row.append('w')
+                        elif(let+num == rloc):
+                            row.append('R')
+                        elif(let+num == sloc):
+                            row.append('s')
+                        else:
+                            row.append('f')
+                    elif(gameBoard[let+num] == 'lake'):
+                        if(let+num == sloc):
+                            row.append('S')
+                        else:
+                            row.append('l')
+
+            print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+            row.clear()
+    #player 2
+    else:
+        #CommandLine print
+        row =[]
+        letters = 'ABCDEFGH'
+        numbers = '12345678'
+        print('  '+numbers)
+        wloc = player2_units['warrior']
+        rloc = player2_units['ranger']
+        sloc = player2_units['sorceress']
+        otherWloc = player1_units['warrior']
+        otherRloc = player1_units['ranger']
+        otherSloc = player1_units['sorceress']
+        for let in letters:
+            for num in numbers:
+                if(let+num in vision):# and (let+num == otherWloc or let+num == otherRloc or let+num == otherSloc)):
+                    if(let+num == otherWloc):
+                        if(gameBoard[let+num] == 'mountain'):
+                            row.append('W')
+                        else:
+                            row.append('w')
+                    elif(let+num == otherRloc):
+                        if(gameBoard[let+num] == 'forest'):
+                            row.append('R')
+                        else:
+                            row.append('r')
+                    elif(let+num == otherSloc):
+                        if(gameBoard[let+num] == 'lake'):
+                            row.append('S')
+                        else:
+                            row.append('s')
+                if(gameBoard[let+num] == 'plains'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('r')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('p')
+                elif(gameBoard[let+num] == 'mountain'):
+                    if(let+num == wloc):
+                        row.append('W')
+                    else:
+                        row.append('m')
+                elif(gameBoard[let+num] == 'forest'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('R')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('f')
+                elif(gameBoard[let+num] == 'lake'):
+                    if(let+num == sloc):
+                        row.append('S')
+                    else:
+                        row.append('l')
+
+            print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+            row.clear()
+###############################################END PRINTCMD#######################################################
+
+###################################################VISION#############################################
 def getVision():
     global consumer_id
     consumer_id = channel.basic_consume(assignVision,
                                         queue=playerNum,
                                         no_ack=True)
+    print("Looking to consume Vision Message\n")
     channel.start_consuming()
 
 def assignVision(ch, method, properties, body):
     global vision
     body = json.loads(body.decode())
     vision = list(body.keys())
-    print(vision)
+    printBoardCMD()
     channel.basic_cancel(consumer_tag=consumer_id)
-####################################################################################
+##################################################END VISION#################################################
 
-##################################DEPLOYMENT##########################################
+####################################################DEPLOYMENT#########################################
 def checkInDeploymentZone(player, pos):
     deploymentZone = []
     if(player == 'player1'):
@@ -141,7 +277,7 @@ def unitCanEnterSpace(unit, pos):
 def deployP1UnitFromCommandLine(unit):
     global player1_units
     while(player1_units[unit] == 'DEPLOY'):
-        p1Deploy = input("Player 1: Where for "+unit)
+        p1Deploy = input("Player 1: Where for "+unit+'\n')
         if(checkInDeploymentZone('player1', p1Deploy) == False):
             print("Pick a space in the first 2 rows")
         else:
@@ -162,7 +298,7 @@ def deployP1UnitFromCommandLine(unit):
 def deployP2UnitFromCommandLine(unit):
     global player2_units
     while(player2_units[unit] == 'DEPLOY'):
-        p2Deploy = input("Player 2: Where for "+unit)
+        p2Deploy = input("Player 2: Where for "+unit+'\n')
         if(checkInDeploymentZone('player2', p2Deploy) == False):
             print("Pick a space in the first 2 rows")
         else:
@@ -191,9 +327,64 @@ def deployPlayerCommandLine(player):
             deployP2UnitFromCommandLine(unit)
 def deploy():
     deployPlayerCommandLine(playerNum)
+    getOpponentDeploy()
     getVision()
     
-##############################################################################
+def getOpponentDeploy():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignOppUnits, queue=playerNum, no_ack=True)
+    channel.start_consuming()
+    
+def assignOppUnits(ch, method, properties, body):
+    print("collecting unit info from server\n")
+    global player1_units
+    global player2_units
+    body = json.loads(body.decode())
+    if(playerNum == 'player1'):
+        player2_units['warrior'] = body['warrior']
+        player2_units['ranger'] = body['ranger']
+        player2_units['sorceress'] = body['sorceress']
+    else:
+        player1_units['warrior'] = body['warrior']
+        player1_units['ranger'] = body['ranger']
+        player1_units['sorceress'] = body['sorceress']
+    channel.basic_cancel(consumer_tag=consumer_id)
+################################################END DEPLOYMENT####################################################
+
+##############################################TURN TAKING MECHANICS#######################################
+def takeTurn():
+    #consume if it's our turn
+    getTurnNotification()
+    #publish which unit will play this turn
+    publishUnitToPlay()
+    #consume movement
+ 
+def assignNotification(ch, method, properties, body):
+    global playerTurn
+    print(body)
+    print('made to here \n')
+    if(body == playerNum):
+        playerTurn = True
+        print("It's your turn\n")
+    else:
+        playerTurn = False
+        print("Wait for other player\n")
+    channel.basic_cancel(consumer_tag=consumer_id)
+    
+def getTurnNotification():
+    print("entering getTurnNotification()\n")
+    global consumer_id
+    consumer_id = channel.basic_consume(assignNotification, queue=playerNum, no_ack=True)
+    print("called basic consume\n")
+    channel.start_consuming()
+    
+def publishUnitToPlay():
+    unit = input("Which unit will you use this turn?\n")
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='server',
+                          body=unit)
+    
+#########################################################################################################
 
 def main():
     #TODO
@@ -213,6 +404,7 @@ def main():
     grabBoard()
     #deploy
     deploy()
+    takeTurn()
     #print board
     #main loop:
         #take turn
