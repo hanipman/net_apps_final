@@ -336,16 +336,12 @@ def getDistance(pointA, pointB):
     diffX = AX - BX
     totalDiff = (diffY**2 + diffX**2)**(0.5)
     if(totalDiff % 1 != 0) :
-<<<<<<< HEAD
         totalDiff = totalDiff + 1
-=======
         totalDiff += 1
->>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     return int(totalDiff)
 
 
 def showAvailableTargets(player, unit, currentLoc) :
-<<<<<<< HEAD
     myVisibility = None
     enemyUnits = None
     attackRange = 0
@@ -355,7 +351,6 @@ def showAvailableTargets(player, unit, currentLoc) :
     else :
         myVisibility = player2_vision
         enemyUnits = player1_units
-=======
     myVisibility = None;
     enemyUnits = None;
     attackRange = 0;
@@ -374,7 +369,6 @@ def showAvailableTargets(player, unit, currentLoc) :
         esloc = player1_units['sorceress']
         myVisibility = player2_vision;
         enemyUnits = player1_units;
->>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     if(unit == 'warrior') :
         attackRange = 0    #must be on the unit it wants to kill
     elif(unit == 'ranger') :
@@ -385,13 +379,11 @@ def showAvailableTargets(player, unit, currentLoc) :
     targets = set()
     for position in enemyUnits :
         if(position in myVisibility) :
-<<<<<<< HEAD
             targets.add(position)
     return targets
 
 def processCombat(player, unit) :
     currentLoc = None
-=======
             #Check if we're allowed to kill that
             if(unit == 'warrior'):
                 if(position == ewloc or position == erloc):
@@ -410,7 +402,6 @@ def processCombat(player, unit) :
     #TODO*****
     #   make it so Warriors try to attack when they move on someone
     currentLoc = None;
->>>>>>> e477540b0ef3ce9dfbb2fafa5024b875262c1b15
     if(player == 'player1') :
         currentLoc = player1_units[unit]
     else :
