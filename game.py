@@ -6,6 +6,7 @@ import random
 import rmq_params
 import pika
 import json
+import time
 
 #define globals
 player1_units = {'warrior':'DEPLOY', 'ranger':'DEPLOY', 'sorceress':'DEPLOY'}
@@ -455,9 +456,11 @@ def checkVisionBonus(unit, loc):
 #######################################
 
 def PublishVision(player):
+    time.sleep(1)#See if a time gap will help RMQ
+    print('waited 1 before publishing\n')
     dict = {}
     x = 0
-    if(player == "player1"):
+    if(player == 'player1'):
         for each in player1_vision:
             dict[each] = x
             x = x+1

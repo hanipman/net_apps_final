@@ -208,10 +208,7 @@ def printBoardCMD():
 ###################################################VISION#############################################
 def getVision():
     global consumer_id
-    consumer_id = channel.basic_consume(assignVision,
-                                        queue=playerNum,
-                                        no_ack=True)
-    print("Looking to consume Vision Message\n")
+    consumer_id = channel.basic_consume(assignVision,queue=playerNum,no_ack=True)
     channel.start_consuming()
 
 def assignVision(ch, method, properties, body):
@@ -361,9 +358,7 @@ def takeTurn():
  
 def assignNotification(ch, method, properties, body):
     global playerTurn
-    print(body)
-    print('made to here \n')
-    if(body == playerNum):
+    if(body.decode() == playerNum):
         playerTurn = True
         print("It's your turn\n")
     else:
@@ -372,10 +367,8 @@ def assignNotification(ch, method, properties, body):
     channel.basic_cancel(consumer_tag=consumer_id)
     
 def getTurnNotification():
-    print("entering getTurnNotification()\n")
     global consumer_id
     consumer_id = channel.basic_consume(assignNotification, queue=playerNum, no_ack=True)
-    print("called basic consume\n")
     channel.start_consuming()
     
 def publishUnitToPlay():
