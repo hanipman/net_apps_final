@@ -409,6 +409,7 @@ def takeTurn():
         else:
             while oppIsMoving == True:
                 #consume vision Messages from server
+                getCurrentUnitInfo()
                 getOpponentUnitInfo()
                 getVision()
                 getOppIsMoving()
