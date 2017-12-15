@@ -416,7 +416,8 @@ def takeTurn():
             getOpponentUnitInfo()
             getVision()
             oppIsMoving = True #prime for next turn
-        #consume gameOver status
+        print("looking to consume game over")
+        consumeGameOverStatus()
         
 def assignNotification(ch, method, properties, body):
     global playerTurn
@@ -517,6 +518,26 @@ def oppMoving(ch, method, properties, body):
     else:
         oppIsMoving = False
     channel.basic_cancel(consumer_tag=consumer_id)
+    
+def consumeGameOverStatus():
+    global consumer_id
+    consumer_id = channel.basic_consume(checkGameOver, queue=playerNum, no_ack=True)
+    channel.start_consuming()
+    
+def checkGameOver(ch, method, properties, body):
+    global gameOver
+    body =  json.loads(body.decode())
+    winner = list(body.keys())
+    if 'cont' in winner:
+        gameOver = False
+    elif playerNum in winner:
+        gameOver = True
+        print("You Win!")
+    else:
+        gameOver = True
+        print("You Lose!")
+    channel.basic_cancel(consumer_tag=consumer_id)
+        
 #########################################################################################################
 
 def main():
