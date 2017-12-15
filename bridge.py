@@ -53,6 +53,7 @@ print("Created collection 'accounts'")
 moveHist = db.moveHistory
 print("Created collection 'moveHistory'")
 
+#TODO Implement MongoDB stores
 def callback(ch, method, properties, body):
     print(str(body))
 

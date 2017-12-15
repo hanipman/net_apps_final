@@ -334,8 +334,8 @@ def getDistance(pointA, pointB):
     AX = int(pointA[1])
     BY = ord(pointB[0])
     BX = int(pointB[1])
-    diffY = AY - BY
-    diffX = AX - BX
+    diffY = abs(AY - BY)
+    diffX = abs(AX - BX)
     totalDiff = diffY + diffX
     return int(totalDiff)
 
@@ -474,7 +474,8 @@ def checkVisionBonus(unit, loc):
     else:
         return False
     
-#######################################
+    
+################VISION#######################
 
 def PublishVision(player):
     time.sleep(1)#helps RMQ
@@ -660,7 +661,7 @@ def UpdateVision():
 #########################################################################################################################
 
 def randomGeo():
-    geo = ['plains', 'plains', 'plains', 'forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
+    geo = ['plains', 'plains', 'plains']#, 'forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
 
 #Assigns the gameBoard dictionary {spaceLocation:randomGeo}
@@ -839,46 +840,90 @@ sorceressSelectedForTurn = False
             ##combat
     ###player 2
     ##else:
-rCombatSpot = None
+rCombatSpot = []
 def publishAvailableRCombatSpaces(loc):
     global rCombatSpot
     dict = {}
     x = 0
-    spaces = set()
-    if player1Turn:
-        if player2_units['sorceress'] in player1_vision:
-            diff = getDistance(loc, player2_units['sorceress'])
-            print(diff)
-            if(diff <= 3):
-                spaces.add(player2_units['sorceress'])
-                dict[player2_units['sorceress']] = x
-                rCombatSpot = player2_units['sorceress']
-            channel.basic_publish(exchange='apptoserver',
-                                      routing_key='player1',
-                                      body=json.dumps(dict))
+    killableTypes = ['ranger', 'sorceress']
+    for each in killableTypes:
+        if player1Turn:
+            if player2_units[each] in player1_vision:
+                diff = getDistance(loc, player2_units[each])
+                print(diff)
+                if(diff <= 3):
+                    dict[player2_units[each]] = x
+                    rCombatSpot.append(player2_units[each])
+                    
+                #else:
+                    #dict[' '] = x
+            #else:
+                #dict[' '] = x
+            
         else:
-            dict[' '] = x
-            channel.basic_publish(exchange='apptoserver',
-                                  routing_key='player1',
-                                  body=json.dumps(dict))
+            #player 2's ranger
+            if player1_units[each] in player2_vision:
+                diff = getDistance(loc, player1_units[each])
+                if(diff <= 3):
+                    dict[player1_units[each]] = x
+                    rCombatSpot.append(player1_units[each])
+                    
+                else:
+                    dict[' '] = x
+            else:
+                dict[' '] = x
+    if player1Turn:
+        print(dict)
+        channel.basic_publish(exchange='apptoserver',
+                                    routing_key='player1',
+                                    body=json.dumps(dict))
         print("publish to p1 Available Combat Spaces")
     else:
-        #player 2's ranger
-        if player1_units['sorceress'] in player2_vision:
-            diff = getDistance(loc, player1_units['sorceress'])
-            print(diff)
-            if(diff <= 3):
-                spaces.add(player1_units['sorceress'])
-                dict[player1_units['sorceress']] = x
-                rCombatSpot = player1_units['sorceress']
-            channel.basic_publish(exchange='apptoserver',
-                                      routing_key='player2',
-                                      body=json.dumps(dict))
+        channel.basic_publish(exchange='apptoserver',
+                                    routing_key='player2',
+                                    body=json.dumps(dict))
+        print("publish to p2 Available Combat Spaces")
+        
+sCombatSpot = []
+def publishAvailableSCombatSpaces(loc):
+    global sCombatSpot
+    dict = {}
+    x = 0
+    killableTypes = ['warrior', 'sorceress']
+    for each in killableTypes:
+        if player1Turn:
+            if player2_units[each] in player1_vision:
+                diff = getDistance(loc, player2_units[each])
+                if(diff <= 2):
+                    dict[player2_units[each]] = x
+                    sCombatSpot.append(player2_units[each])
+                    
+                else:
+                    dict[' '] = x
+            else:
+                dict[' '] = x
+            
         else:
-            dict[' '] = x
-            channel.basic_publish(exchange='apptoserver',
-                                  routing_key='player2',
-                                  body=json.dumps(dict))
+            #player 2's ranger
+            if player1_units[each] in player2_vision:
+                diff = getDistance(loc, player1_units[each])
+                if(diff <= 2):
+                    dict[player1_units[each]] = x
+                    sCombatSpot.append(player1_units[each])
+                    
+                else:
+                    dict[' '] = x
+            else:
+                dict[' '] = x
+    if player1Turn:
+        channel.basic_publish(exchange='apptoserver',
+                                    routing_key='player1',
+                                    body=json.dumps(dict))
+        print("publish to p1 Available Combat Spaces")
+    else:
+        channel.basic_publish(exchange='apptoserver',
+                                    routing_key='player2',
+                                    body=json.dumps(dict))
         print("publish to p2 Available Combat Spaces")
         
 def assignSelectedUnitForTurn(ch, method, properties, body):
@@ -1006,11 +1051,43 @@ def consumeRCombat():
 
 def killSorceress(ch, method, properties, body):
     if player1Turn:
-        if body.decode() == rCombatSpot and body.decode() == player2_units['sorceress']:
-            player2_units['sorceress'] = 'DEAD'
+        if body.decode() in rCombatSpot:
+            if body.decode() == player2_units['sorceress']:
+                player2_units['sorceress'] = 'DEAD'
+            elif body.decode() == player2_units['ranger']:
+                player1_units['ranger'] = 'DEAD'
+                player2_units['ranger'] = 'DEAD'
+            
     else:
-        if body.decode() == rCombatSpot and body.decode() == player1_units['sorceress']:
-            player1_units['sorceress'] = 'DEAD'
+        if body.decode() in rCombatSpot:
+            if body.decode() == player1_units['sorceress']:
+                player1_units['sorceress'] = 'DEAD'
+            elif body.decode() == player1_units['ranger']:
+                player1_units['ranger'] = 'DEAD'
+                player2_units['ranger'] = 'DEAD'
+    channel.basic_cancel(consumer_tag=consumer_id)
+    
+def consumeSCombat():
+    global consumer_id
+    consumer_id = channel.basic_consume(killWarrior, queue='server', no_ack=True)
+    print("consuming combat space")
+    channel.start_consuming()
+
+def killWarrior(ch, method, properties, body):
+    if player1Turn:
+        if body.decode() in sCombatSpot:
+            if body.decode() == player2_units['warrior']:
+                player2_units['warrior'] = 'DEAD'
+            elif body.decode() == player2_units['sorceress']:
+                player1_units['sorceress'] = 'DEAD'
+                player2_units['sorceress'] = 'DEAD'
+    else:
+        if body.decode() in sCombatSpot:
+            if body.decode() == player1_units['warrior']:
+                player1_units['warrior'] = 'DEAD'
+            elif body.decode() == player1_units['sorceress']:
+                player1_units['sorceress'] = 'DEAD'
+                player2_units['sorceress'] = 'DEAD'
     channel.basic_cancel(consumer_tag=consumer_id)
     
 def handleTurn():
@@ -1109,8 +1186,8 @@ def handleTurn():
                                                     routing_key='player2',
                                                     body='n')
             #enter combat
-            #publishAvailableSCombatSpaces(player1_units['sorceress'])
-            #consumeSCombat()
+            publishAvailableSCombatSpaces(player1_units['sorceress'])
+            consumeSCombat()
             publishOwnUnitInfo('1')
             publishOwnUnitInfo('2')
             publishUnitInfoToOpponent('1')

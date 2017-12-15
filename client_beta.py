@@ -396,9 +396,9 @@ def takeTurn():
                 #check end of movement
                 isMovementDone()
             #do combat phase
-            consumeCombatOptions()
-            #publish attack
-            publishCombatMove()
+            if consumeCombatOptions():
+                #publish attack
+                publishCombatMove()
             #get current unit info
             getCurrentUnitInfo()
             #get Opponent unit info
@@ -478,16 +478,30 @@ def assignCondMovement(ch, method, properties, body):
         moveCont = False
     channel.basic_cancel(consumer_tag=consumer_id)
     
+consumeFlag = None
 def consumeCombatOptions():
     global consumer_id
     consumer_id = channel.basic_consume(assignCombatOptions, queue=playerNum, no_ack=True)
     print("consuming combat options")
     channel.start_consuming()
+    return consumeFlag
 
 def assignCombatOptions(ch, method, properties, body):
+    global consumeFlag
     body = json.loads(body.decode())
     moveOptions = list(body.keys())
-    print("You may attack: ", moveOptions)
+    while len(list(moveOptions)) != 0:
+        if ' ' in moveOptions:
+            del moveOptions[' ']
+        else:
+            print("You may attack: ", moveOptions)
+            consumeFlag = True
+            channel.basic_cancel(consumer_tag=consumer_id)
+            return None
+    consumeFlag = False
+    channel.basic_publish(exchange='apptoserver',
+                            routing_key ='server',
+                            body=' ')
     channel.basic_cancel(consumer_tag=consumer_id)
         
 oppIsMoving = True
