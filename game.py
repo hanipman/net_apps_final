@@ -331,15 +331,12 @@ def processMoves(player, unit):
 
 def getDistance(pointA, pointB): 
     AY = ord(pointA[0])
-    AX = pointA[1]
+    AX = int(pointA[1])
     BY = ord(pointB[0])
-    BX = pointB[1]
+    BX = int(pointB[1])
     diffY = AY - BY
     diffX = AX - BX
-    totalDiff = (diffY**2 + diffX**2)**(0.5)
-    if(totalDiff % 1 != 0) :
-        totalDiff = totalDiff + 1
-        totalDiff += 1
+    totalDiff = diffY + diffX
     return int(totalDiff)
 
 
@@ -424,18 +421,42 @@ def processCombat(player, unit) :
         if(target == unit):
             player2_units[unit] = 'DEAD'
 
-def checkValidMove(unit, loc) :
-    if(loc in gameBoard) :
-        if(gameBoard[loc] == 'mountain') :
-            if(unit == 'warrior'):
-                return True
-            else:
-                return False
-        elif (gameBoard[loc] == 'lake') :
-            if(unit == 'sorceress'):
-                return True
+def checkValidMove(unit, newLoc) :
+    if(newLoc in gameBoard) :
+        if player1Turn == True:
+            loc = player1_units[unit]
         else:
-            return True
+            loc = player2_units[unit]
+        if(newLoc == chr(ord(loc[0])+1)+loc[1] or newLoc == chr(ord(loc[0])-1)+loc[1] or newLoc == loc[0]+str(int(loc[1])+1) or loc[0]+str(int(loc[1])-1) ):
+            #can only move up down right or left 1 space at a time
+            if(isEmptySpace(newLoc)):
+                if(gameBoard[newLoc] == 'mountain') :
+                    if(unit == 'warrior'):
+                        return True
+                    else:
+                        return False
+                elif (gameBoard[newLoc] == 'lake') :
+                    if(unit == 'sorceress'):
+                        return True
+                    else:
+                        return False
+                else:
+                    return True
+            else:
+                #warrior can move into enemy ranger
+                if(unit == 'warrior'):
+                    if(player1Turn):
+                        if(newLoc == player2_units['ranger'] or newLoc == player2_units['warrior']):
+                            return True
+                        else:
+                            return False
+                    else:
+                        if(newLoc == player1_units['ranger'] or newLoc == player1_units['warrior']):
+                            return True
+                        else:
+                            return False
+    else:
+        return False
 
 def moveUnit(player, unit, newLoc) :
     global player1_units;
@@ -456,8 +477,7 @@ def checkVisionBonus(unit, loc):
 #######################################
 
 def PublishVision(player):
-    time.sleep(1)#See if a time gap will help RMQ
-    print('waited 1 before publishing\n')
+    time.sleep(1)#helps RMQ
     dict = {}
     x = 0
     if(player == 'player1'):
@@ -477,7 +497,7 @@ def PublishVision(player):
                             routing_key='player2',
                             body=json.dumps(dict),
                             properties=pika.BasicProperties(delivery_mode = 2))
-    print("published vision for "+player+"\n")
+    print("published vision for "+player)
 
 #Sets player vision
 def UpdateVision():
@@ -485,7 +505,7 @@ def UpdateVision():
     global player2_vision
     player1_vision = setPlayerVision(player1_units)
     player2_vision = setPlayerVision(player2_units)
-    #TODO vision message on RMQ
+    #vision message on RMQ
     PublishVision('player1')
     PublishVision('player2')
 
@@ -506,141 +526,141 @@ def UpdateVision():
 #Where m=mountainl=lakef=forestp=plainss=sorceressr=rangerw=warrior
 #A unit capitalized means that it is in its respective bonus-granting geo-location
 #e.g. W in m, w in p or f
-def printBoardP2():
-    #TODO P2 units status message on RMQ
-    #CommandLine print
-    row =[]
-    letters = 'ABCDEFGH'
-    numbers = '12345678'
-    print('  '+numbers)
-    wloc = player2_units['warrior']
-    rloc = player2_units['ranger']
-    sloc = player2_units['sorceress']
-    otherWloc = player1_units['warrior']
-    otherRloc = player1_units['ranger']
-    otherSloc = player1_units['sorceress']
-    for let in letters:
-        for num in numbers:
-            if(let+num in player2_vision):# and (let+num == otherWloc or let+num == otherRloc or let+num == otherSloc)):
-                if(let+num == otherWloc):
-                    if(gameBoard[let+num] == 'mountain'):
-                        row.append('W')
-                    else:
-                        row.append('w')
-                elif(let+num == otherRloc):
-                    if(gameBoard[let+num] == 'forest'):
-                        row.append('R')
-                    else:
-                        row.append('r')
-                elif(let+num == otherSloc):
-                    if(gameBoard[let+num] == 'lake'):
-                        row.append('S')
-                    else:
-                        row.append('s')
-            if(gameBoard[let+num] == 'plains'):
-                if(let+num == wloc):
-                    row.append('w')
-                elif(let+num == rloc):
-                    row.append('r')
-                elif(let+num == sloc):
-                    row.append('s')
-                else:
-                    row.append('p')
-            elif(gameBoard[let+num] == 'mountain'):
-                if(let+num == wloc):
-                    row.append('W')
-                else:
-                    row.append('m')
-            elif(gameBoard[let+num] == 'forest'):
-                if(let+num == wloc):
-                    row.append('w')
-                elif(let+num == rloc):
-                    row.append('R')
-                elif(let+num == sloc):
-                    row.append('s')
-                else:
-                    row.append('f')
-            elif(gameBoard[let+num] == 'lake'):
-                if(let+num == sloc):
-                    row.append('S')
-                else:
-                    row.append('l')
+#def printBoardP2():
+    ##TODO P2 units status message on RMQ
+    ##CommandLine print
+    #row =[]
+    #letters = 'ABCDEFGH'
+    #numbers = '12345678'
+    #print('  '+numbers)
+    #wloc = player2_units['warrior']
+    #rloc = player2_units['ranger']
+    #sloc = player2_units['sorceress']
+    #otherWloc = player1_units['warrior']
+    #otherRloc = player1_units['ranger']
+    #otherSloc = player1_units['sorceress']
+    #for let in letters:
+        #for num in numbers:
+            #if(let+num in player2_vision):# and (let+num == otherWloc or let+num == otherRloc or let+num == otherSloc)):
+                #if(let+num == otherWloc):
+                    #if(gameBoard[let+num] == 'mountain'):
+                        #row.append('W')
+                    #else:
+                        #row.append('w')
+                #elif(let+num == otherRloc):
+                    #if(gameBoard[let+num] == 'forest'):
+                        #row.append('R')
+                    #else:
+                        #row.append('r')
+                #elif(let+num == otherSloc):
+                    #if(gameBoard[let+num] == 'lake'):
+                        #row.append('S')
+                    #else:
+                        #row.append('s')
+            #if(gameBoard[let+num] == 'plains'):
+                #if(let+num == wloc):
+                    #row.append('w')
+                #elif(let+num == rloc):
+                    #row.append('r')
+                #elif(let+num == sloc):
+                    #row.append('s')
+                #else:
+                    #row.append('p')
+            #elif(gameBoard[let+num] == 'mountain'):
+                #if(let+num == wloc):
+                    #row.append('W')
+                #else:
+                    #row.append('m')
+            #elif(gameBoard[let+num] == 'forest'):
+                #if(let+num == wloc):
+                    #row.append('w')
+                #elif(let+num == rloc):
+                    #row.append('R')
+                #elif(let+num == sloc):
+                    #row.append('s')
+                #else:
+                    #row.append('f')
+            #elif(gameBoard[let+num] == 'lake'):
+                #if(let+num == sloc):
+                    #row.append('S')
+                #else:
+                    #row.append('l')
 
-        print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
-        row.clear()
+        #print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+        #row.clear()
 
-def printBoardP1():
-    #TODO P1 units status on RMQ
-    #CommandLine print
-    row =[]
-    letters = 'ABCDEFGH'
-    numbers = '12345678'
-    print('  '+numbers)
-    wloc = player1_units['warrior']
-    rloc = player1_units['ranger']
-    sloc = player1_units['sorceress']
-    otherWloc = player2_units['warrior']
-    otherRloc = player2_units['ranger']
-    otherSloc = player2_units['sorceress']
-    for let in letters:
-        for num in numbers:
-            skipSpace = False
-            if(let+num in player1_vision):
-                if(let+num == otherWloc):
-                    skipSpace = True
-                    if(gameBoard[let+num] == 'mountain'):
-                        row.append('W')
-                    else:
-                        row.append('w')
-                elif(let+num == otherRloc):
-                    skipSpace = True
-                    if(gameBoard[let+num] == 'forest'):
-                        row.append('R')
-                    else:
-                        row.append('r')
-                elif(let+num == otherSloc):
-                    skipSpace = True
-                    if(gameBoard[let+num] == 'lake'):
-                        row.append('S')
-                    else:
-                        row.append('s')
-            if(skipSpace == False):
-                if(gameBoard[let+num] == 'plains'):
-                    if(let+num == wloc):
-                        row.append('w')
-                    elif(let+num == rloc):
-                        row.append('r')
-                    elif(let+num == sloc):
-                        row.append('s')
-                    else:
-                        row.append('p')
-                elif(gameBoard[let+num] == 'mountain'):
-                    if(let+num == wloc):
-                        row.append('W')
-                    else:
-                        row.append('m')
-                elif(gameBoard[let+num] == 'forest'):
-                    if(let+num == wloc):
-                        row.append('w')
-                    elif(let+num == rloc):
-                        row.append('R')
-                    elif(let+num == sloc):
-                        row.append('s')
-                    else:
-                        row.append('f')
-                elif(gameBoard[let+num] == 'lake'):
-                    if(let+num == sloc):
-                        row.append('S')
-                    else:
-                        row.append('l')
+#def printBoardP1():
+    ##TODO P1 units status on RMQ
+    ##CommandLine print
+    #row =[]
+    #letters = 'ABCDEFGH'
+    #numbers = '12345678'
+    #print('  '+numbers)
+    #wloc = player1_units['warrior']
+    #rloc = player1_units['ranger']
+    #sloc = player1_units['sorceress']
+    #otherWloc = player2_units['warrior']
+    #otherRloc = player2_units['ranger']
+    #otherSloc = player2_units['sorceress']
+    #for let in letters:
+        #for num in numbers:
+            #skipSpace = False
+            #if(let+num in player1_vision):
+                #if(let+num == otherWloc):
+                    #skipSpace = True
+                    #if(gameBoard[let+num] == 'mountain'):
+                        #row.append('W')
+                    #else:
+                        #row.append('w')
+                #elif(let+num == otherRloc):
+                    #skipSpace = True
+                    #if(gameBoard[let+num] == 'forest'):
+                        #row.append('R')
+                    #else:
+                        #row.append('r')
+                #elif(let+num == otherSloc):
+                    #skipSpace = True
+                    #if(gameBoard[let+num] == 'lake'):
+                        #row.append('S')
+                    #else:
+                        #row.append('s')
+            #if(skipSpace == False):
+                #if(gameBoard[let+num] == 'plains'):
+                    #if(let+num == wloc):
+                        #row.append('w')
+                    #elif(let+num == rloc):
+                        #row.append('r')
+                    #elif(let+num == sloc):
+                        #row.append('s')
+                    #else:
+                        #row.append('p')
+                #elif(gameBoard[let+num] == 'mountain'):
+                    #if(let+num == wloc):
+                        #row.append('W')
+                    #else:
+                        #row.append('m')
+                #elif(gameBoard[let+num] == 'forest'):
+                    #if(let+num == wloc):
+                        #row.append('w')
+                    #elif(let+num == rloc):
+                        #row.append('R')
+                    #elif(let+num == sloc):
+                        #row.append('s')
+                    #else:
+                        #row.append('f')
+                #elif(gameBoard[let+num] == 'lake'):
+                    #if(let+num == sloc):
+                        #row.append('S')
+                    #else:
+                        #row.append('l')
 
-        print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
-        row.clear()
+        #print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
+        #row.clear()
 
 #########################################################################################################################
 
 def randomGeo():
-    geo = ['plains', 'plains','forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
+    geo = ['plains', 'plains', 'plains', 'forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
 
 #Assigns the gameBoard dictionary {spaceLocation:randomGeo}
@@ -694,7 +714,7 @@ def deployP1UnitFromCommandLine(unit, p1Deploy):
     if(checkInDeploymentZone('player1', p1Deploy) == False):
         print("Pick a space in the first 2 rows")
     else:
-        if(checkValidMove(unit, p1Deploy) == False):
+        if(unitCanEnterSpace(unit, p1Deploy) == False):
             print("Unit cannot enter "+p1Deploy)
         else:
             if(isEmptySpace(p1Deploy) == False):
@@ -707,7 +727,7 @@ def deployP2UnitFromCommandLine(unit, p2Deploy):
     if(checkInDeploymentZone('player2', p2Deploy) == False):
         print("Pick a space in the first 2 rows")
     else:
-        if(checkValidMove(unit, p2Deploy) == False):
+        if(unitCanEnterSpace(unit, p2Deploy) == False):
             print("Unit cannot enter "+p2Deploy)
         else:
             if(isEmptySpace(p2Deploy) == False):
@@ -724,6 +744,25 @@ def deployPlayerCommandLine(player):
         #player2
         for unit in units:
             deployP2UnitFromCommandLine(unit)
+            
+#checks if unit can go into space
+def unitCanEnterSpace(unit, pos):
+    if(unit == 'warrior'):
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'mountain' or gameBoard[pos] == 'forest'):
+            return True
+        else:
+            return False
+    elif(unit == 'ranger'):
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest'):
+            return True
+        else:
+            return False
+    else:
+        if(gameBoard[pos] == 'plains' or gameBoard[pos] == 'forest' or gameBoard[pos] == 'lake'):
+            return True
+        else:
+            return False
+    
             
 ############################################################################################
 
@@ -775,36 +814,91 @@ def checkIfPlayersConnected():
 warriorSelectedForTurn = False
 rangerSelectedForTurn = False
 sorceressSelectedForTurn = False
-def game_message(ch, method, properties, body):
-    global warriorSelectedForTurn
-    global rangerSelectedForTurn
-    global sorceressSelectedForTurn
-    body = json.loads(body.decode())
-    key = body.keys().pop()
-    print(key)
-    #player 1
-    if key[0] == '1':
-        if key[1] == 'w':
-            #selected warrior
-            warriorSelectedForTurn = True
-        elif key[1] == 'r':
-            #selected ranger
-            rangerSelectedForTurn = True
-        elif key[1] == 's':
-            #selected sorceress
-            sorceressSelectedForTurn = True
-        #elif key [1] == 'm':
-            ##move
-        #elif key[1] == 'c':
-            #combat
-    ##player 2
-    #else:
+#Probably DEAD CODE
+#def game_message(ch, method, properties, body):
+    #global warriorSelectedForTurn
+    #global rangerSelectedForTurn
+    #global sorceressSelectedForTurn
+    #body = json.loads(body.decode())
+    #key = body.keys().pop()
+    #print(key)
+    ##player 1
+    #if key[0] == '1':
+        #if key[1] == 'w':
+            ##selected warrior
+            #warriorSelectedForTurn = True
+        #elif key[1] == 'r':
+            ##selected ranger
+            #rangerSelectedForTurn = True
+        #elif key[1] == 's':
+            ##selected sorceress
+            #sorceressSelectedForTurn = True
+        ##elif key [1] == 'm':
+            ###move
+        ##elif key[1] == 'c':
+            ##combat
+    ###player 2
+    ##else:
+rCombatSpot = None
+def publishAvailableRCombatSpaces(loc):
+    global rCombatSpot
+    dict = {}
+    x = 0
+    spaces = set()
+    if player1Turn:
+        if player2_units['sorceress'] in player1_vision:
+            diff = getDistance(loc, player2_units['sorceress'])
+            print(diff)
+            if(diff <= 3):
+                spaces.add(player2_units['sorceress'])
+                dict[player2_units['sorceress']] = x
+                rCombatSpot = player2_units['sorceress']
+            channel.basic_publish(exchange='apptoserver',
+                                      routing_key='player1',
+                                      body=json.dumps(dict))
+        else:
+            dict[' '] = x
+            channel.basic_publish(exchange='apptoserver',
+                                  routing_key='player1',
+                                  body=json.dumps(dict))
+        print("publish to p1 Available Combat Spaces")
+    else:
+        #player 2's ranger
+        if player1_units['sorceress'] in player2_vision:
+            diff = getDistance(loc, player1_units['sorceress'])
+            print(diff)
+            if(diff <= 3):
+                spaces.add(player1_units['sorceress'])
+                dict[player1_units['sorceress']] = x
+                rCombatSpot = player1_units['sorceress']
+            channel.basic_publish(exchange='apptoserver',
+                                      routing_key='player2',
+                                      body=json.dumps(dict))
+        else:
+            dict[' '] = x
+            channel.basic_publish(exchange='apptoserver',
+                                  routing_key='player2',
+                                  body=json.dumps(dict))
+        print("publish to p2 Available Combat Spaces")
+        
 def assignSelectedUnitForTurn(ch, method, properties, body):
     global warriorSelectedForTurn
     global rangerSelectedForTurn
     global sorceressSelectedForTurn
     body = body.decode()
-    print(body)
+    print("received "+body+" as selected unit.")
+    if(body == 'w'):
+        warriorSelectedForTurn = True
+        rangerSelectedForTurn = False
+        sorceressSelectedForTurn = False
+    elif(body == 'r'):
+        warriorSelectedForTurn = False
+        rangerSelectedForTurn = True
+        sorceressSelectedForTurn = False
+    else:#(body == 's'):
+        warriorSelectedForTurn = False
+        rangerSelectedForTurn = False
+        sorceressSelectedForTurn = True
     channel.basic_cancel(consumer_tag=consumer_id)
     
 def consumeWhichUnit():
@@ -818,47 +912,233 @@ def handleGame():
     while gameOver == False:
         handleTurn()
         player1Turn = not player1Turn
+        #Probably DEAD CODE
         #global consumer_id
         #consumer_id = channel.basic_consume(game_message, queue='server', no_ack=True)
         #channel.start_consuming()
 
+def getAvailableMoveSpaces(loc):
+    spaces = set()
+    up = chr(ord(loc[0])-1)+loc[1]
+    down = chr(ord(loc[0])+1)+loc[1]
+    right = loc[0]+str(int(loc[1])+1)
+    left = loc[0]+str(int(loc[1])-1)
+    directions = set()
+    directions.add(up)
+    directions.add(down)
+    directions.add(left)
+    directions.add(right)
+    if(warriorSelectedForTurn):
+        for each in directions:
+            if checkValidMove('warrior', each):
+                spaces.add(each)
+    elif rangerSelectedForTurn:
+        for each in directions:
+            if checkValidMove('ranger', each):
+                spaces.add(each)
+    else:
+        for each in directions:
+            if checkValidMove('sorceress', each):
+                spaces.add(each)
+    return spaces
+
+availableMoveSpaces = None
+def publishAvailableMoveSpaces(loc):
+    time.sleep(1)
+    global availableMoveSpaces
+    dict = {}
+    availableMoveSpaces = getAvailableMoveSpaces(loc)
+    x = 0
+    for each in availableMoveSpaces:
+        dict[each] = x
+        x = x+1
+    if(player1Turn):
+        print("publishing available move spaces to player1")
+        channel.basic_publish(exchange='apptoserver',
+                                routing_key='player1',
+                                body=json.dumps(dict),
+                                properties=pika.BasicProperties(delivery_mode = 2))
+    else:
+        channel.basic_publish(exchange='apptoserver',
+                                routing_key='player2',
+                                body=json.dumps(dict),
+                                properties=pika.BasicProperties(delivery_mode = 2))
+
+def assignNewSpace(ch, method, properties, body):
+    global player1_units
+    global player2_units
+    body = body.decode()
+    print("Move ", body, " received")
+    if body in availableMoveSpaces:
+        if warriorSelectedForTurn:
+            if player1Turn:
+                print('assign player1_units')
+                player1_units['warrior'] = body
+                if player2_units['ranger'] == player1_units['warrior']:
+                    player2_units['ranger'] = 'DEAD'
+            else:
+                player2_units['warrior'] = body
+                if player1_units['ranger'] == player2_units['warrior']:
+                    player1_units['ranger'] = 'DEAD'
+        elif rangerSelectedForTurn:
+            if player1Turn:
+                player1_units['ranger'] = body
+            else:
+                player2_units['ranger'] = body
+        else:
+            if player1Turn:
+                player1_units['sorceress'] = body
+            else:
+                player2_units['sorceress'] = body
+        channel.basic_cancel(consumer_tag=consumer_id)
+
+def consumeMovementOption():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignNewSpace, queue='server', no_ack=True)
+    print("consuming move to new space")
+    channel.start_consuming()
+    
+def consumeRCombat():
+    global consumer_id
+    consumer_id = channel.basic_consume(killSorceress, queue='server', no_ack=True)
+    print("consuming combat space")
+    channel.start_consuming()
+
+def killSorceress(ch, method, properties, body):
+    if player1Turn:
+        if body.decode() == rCombatSpot and body.decode() == player2_units['sorceress']:
+            player2_units['sorceress'] = 'DEAD'
+    else:
+        if body.decode() == rCombatSpot and body.decode() == player1_units['sorceress']:
+            player1_units['sorceress'] = 'DEAD'
+    channel.basic_cancel(consumer_tag=consumer_id)
+    
 def handleTurn():
     if(player1Turn == True):
-        print('get here\n')
         #player 1 turn
         #tell player 1 it's their turn
         notifyPlayerOfTurn('player1')
         #consume message for which unit they'll play with this turn
         consumeWhichUnit()
-        #for x in unit_movement
-            #produce available move spaces
-            #consume message for movement
-        #produce availabe combat spaces
-        #consume message for combat
+        if warriorSelectedForTurn:
+            for x in range(0, 2):
+                time.sleep(1)
+                publishAvailableMoveSpaces(player1_units['warrior'])
+                consumeMovementOption()
+                publishOwnUnitInfo('1')
+                publishUnitInfoToOpponent('1')
+                publishUnitInfoToOpponent('2')
+                UpdateVision()
+                #publish movement not done
+                if x == 0:
+                    time.sleep(1)
+                    channel.basic_publish(exchange='apptoserver',
+                                        routing_key='player1',
+                                        body='n')
+                    channel.basic_publish(exchange='apptoserver',
+                                        routing_key='player2',
+                                        body='y')
+                else:
+                    time.sleep(1)
+                    #publish movement done
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player1',
+                                                body='y')
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player2',
+                                                body='n')
+            #enter combat
+            publishAvailableMoveSpaces(player1_units['warrior'])
+            consumeMovementOption()
+            publishOwnUnitInfo('1')
+            publishOwnUnitInfo('2')
+            publishUnitInfoToOpponent('1')
+            publishUnitInfoToOpponent('2')
+            UpdateVision()
+        elif rangerSelectedForTurn:
+            time.sleep(1)
+            publishAvailableMoveSpaces(player1_units['ranger'])
+            consumeMovementOption()
+            publishOwnUnitInfo('1')
+            publishUnitInfoToOpponent('1')
+            publishUnitInfoToOpponent('2')
+            UpdateVision()
+            #publish movement done
+            print("publishing end movement")
+            time.sleep(1)
+            channel.basic_publish(exchange='apptoserver',
+                                        routing_key='player1',
+                                        body='y')
+            channel.basic_publish(exchange='apptoserver',
+                                        routing_key='player2',
+                                        body='n')
+            time.sleep(1)
+            #enter combat
+            publishAvailableRCombatSpaces(player1_units['ranger'])
+            consumeRCombat()
+            publishOwnUnitInfo('1')
+            publishOwnUnitInfo('2')
+            publishUnitInfoToOpponent('1')
+            publishUnitInfoToOpponent('2')
+            UpdateVision()
+        else:# sorceressSelectedForTurn:
+            for x in range(0, 3):
+                    time.sleep(1)
+                    publishAvailableMoveSpaces(player1_units['sorceress'])
+                    consumeMovementOption()
+                    publishOwnUnitInfo('1')
+                    publishUnitInfoToOpponent('1')
+                    publishUnitInfoToOpponent('2')
+                    UpdateVision()
+                    #publish movement not done
+                    if x == 0 or x == 1:
+                        time.sleep(1)
+                        channel.basic_publish(exchange='apptoserver',
+                                            routing_key='player1',
+                                            body='n')
+                        channel.basic_publish(exchange='apptoserver',
+                                            routing_key='player2',
+                                            body='y')
+                    else:
+                        time.sleep(1)
+                        #publish movement done
+                        channel.basic_publish(exchange='apptoserver',
+                                                    routing_key='player1',
+                                                    body='y')
+                        channel.basic_publish(exchange='apptoserver',
+                                                    routing_key='player2',
+                                                    body='n')
+            #enter combat
+            #publishAvailableSCombatSpaces(player1_units['sorceress'])
+            #consumeSCombat()
+            publishOwnUnitInfo('1')
+            publishOwnUnitInfo('2')
+            publishUnitInfoToOpponent('1')
+            publishUnitInfoToOpponent('2')
+            UpdateVision()
     #else:
         ##player 2 turn
 
 def notifyPlayerOfTurn(player):
+    time.sleep(1)
     if(player == 'player1'):
-        print("made it here\n")
         channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body='player1',
                           properties=pika.BasicProperties(delivery_mode = 2))
-        print("first publish\n")
         channel.basic_publish(exchange='apptoserver',
                           routing_key='player2',
                           body='player1',
                           properties=pika.BasicProperties(delivery_mode = 2))
-        print("second publish \n")
     else:
         #player 2
         channel.basic_publish(exchange='apptoserver',
-                          routing_key='player2',
+                          routing_key='player1',
                           body='player2')
         channel.basic_publish(exchange='apptoserver',
                           routing_key='player2',
                           body='player2')
+    print('Turn Notification Published')
 
 def deploy_message(ch, method, properties, body):
     body = json.loads(body.decode())
@@ -888,21 +1168,38 @@ def handleDeployment():
         global consumer_id
         consumer_id = channel.basic_consume(deploy_message, queue='server', no_ack=True)
         channel.start_consuming()
-    publishUnitInfo()
+    publishUnitInfoToOpponent('1')
+    publishUnitInfoToOpponent('2')
     
 
-def publishUnitInfo():
-    channel.basic_publish(exchange='apptoserver',
-                          routing_key='player1',
-                          body=json.dumps(player2_units),
-                          properties=pika.BasicProperties(delivery_mode = 2))
-    channel.basic_publish(exchange='apptoserver',
-                          routing_key='player2',
-                          body=json.dumps(player1_units),
-                          properties=pika.BasicProperties(delivery_mode = 2))
-    print("published unit info\n")
-        
-###########################
+def publishUnitInfoToOpponent(num):
+    time.sleep(1)
+    if num == '2':
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player1',
+                            body=json.dumps(player2_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+        print('published opponent unit info to player 1')
+    else:
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player2',
+                            body=json.dumps(player1_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+        print('published opponent unit info to player 2')
+    
+def publishOwnUnitInfo(num):
+    if num == '1':
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player1',
+                            body=json.dumps(player1_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+    else:
+        channel.basic_publish(exchange='apptoserver',
+                            routing_key='player2',
+                            body=json.dumps(player2_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+    print("published own unit info")
+#####################################################################################################
 
 def main():
     connectRMQ()

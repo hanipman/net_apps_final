@@ -215,6 +215,7 @@ def assignVision(ch, method, properties, body):
     global vision
     body = json.loads(body.decode())
     vision = list(body.keys())
+    print("vision = ", vision)
     printBoardCMD()
     channel.basic_cancel(consumer_tag=consumer_id)
 ##################################################END VISION#################################################
@@ -324,19 +325,20 @@ def deployPlayerCommandLine(player):
             deployP2UnitFromCommandLine(unit)
 def deploy():
     deployPlayerCommandLine(playerNum)
-    getOpponentDeploy()
+    getOpponentUnitInfo()
     getVision()
     
-def getOpponentDeploy():
+def getOpponentUnitInfo():
     global consumer_id
     consumer_id = channel.basic_consume(assignOppUnits, queue=playerNum, no_ack=True)
     channel.start_consuming()
     
 def assignOppUnits(ch, method, properties, body):
-    print("collecting unit info from server\n")
+    print("collecting opposing unit info from server")
     global player1_units
     global player2_units
     body = json.loads(body.decode())
+    print(body)
     if(playerNum == 'player1'):
         player2_units['warrior'] = body['warrior']
         player2_units['ranger'] = body['ranger']
@@ -346,24 +348,84 @@ def assignOppUnits(ch, method, properties, body):
         player1_units['ranger'] = body['ranger']
         player1_units['sorceress'] = body['sorceress']
     channel.basic_cancel(consumer_tag=consumer_id)
+    
+def getCurrentUnitInfo():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignOwnUnits, queue=playerNum, no_ack=True)
+    channel.start_consuming()
+    
+def assignOwnUnits(ch, method, properties, body):
+    print("collecting own unit info from server")
+    global player1_units
+    global player2_units
+    body = json.loads(body.decode())
+    print(body)
+    if(playerNum == 'player1'):
+        player1_units['warrior'] = body['warrior']
+        player1_units['ranger'] = body['ranger']
+        player1_units['sorceress'] = body['sorceress']
+    else:
+        player2_units['warrior'] = body['warrior']
+        player2_units['ranger'] = body['ranger']
+        player2_units['sorceress'] = body['sorceress']
+    channel.basic_cancel(consumer_tag=consumer_id)
 ################################################END DEPLOYMENT####################################################
 
 ##############################################TURN TAKING MECHANICS#######################################
+gameOver = False
 def takeTurn():
-    #consume if it's our turn
-    getTurnNotification()
-    #publish which unit will play this turn
-    publishUnitToPlay()
-    #consume movement
- 
+    global oppIsMoving
+    global moveCont
+    global playerTurn
+    while(gameOver == False):
+        #consume if it's our turn
+        getTurnNotification()
+        if(playerTurn == True):
+            #publish which unit will play this turn
+            publishUnitToPlay()
+            while moveCont == True:
+                #see movementOptions
+                consumeMovementOptions()
+                #make move
+                publishMove()
+                #get current info
+                getCurrentUnitInfo()
+                getOpponentUnitInfo()
+                #update vision
+                getVision()
+                #check end of movement
+                isMovementDone()
+            #do combat phase
+            consumeCombatOptions()
+            #publish attack
+            publishCombatMove()
+            #get current unit info
+            getCurrentUnitInfo()
+            #get Opponent unit info
+            getOpponentUnitInfo()
+            #update vision
+            getVision()
+            moveCont = True #prime for next turn
+        else:
+            while oppIsMoving == True:
+                #consume vision Messages from server
+                getOpponentUnitInfo()
+                getVision()
+                getOppIsMoving()
+            getCurrentUnitInfo()
+            getOpponentUnitInfo()
+            getVision()
+            oppIsMoving = True #prime for next turn
+        #consume gameOver status
+        
 def assignNotification(ch, method, properties, body):
     global playerTurn
     if(body.decode() == playerNum):
         playerTurn = True
-        print("It's your turn\n")
+        print("It's your turn")
     else:
         playerTurn = False
-        print("Wait for other player\n")
+        print("Wait for other player...")
     channel.basic_cancel(consumer_tag=consumer_id)
     
 def getTurnNotification():
@@ -372,11 +434,75 @@ def getTurnNotification():
     channel.start_consuming()
     
 def publishUnitToPlay():
-    unit = input("Which unit will you use this turn?\n")
+    unit = input("Which unit will you use this turn?(w,r,s)\n")
     channel.basic_publish(exchange='apptoserver',
                           routing_key='server',
                           body=unit)
     
+def consumeMovementOptions():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignMovementOptions, queue=playerNum, no_ack=True)
+    print("consuming move options")
+    channel.start_consuming()
+
+def assignMovementOptions(ch, method, properties, body):
+    body = json.loads(body.decode())
+    moveOptions = list(body.keys())
+    print("You may move: ", moveOptions)
+    channel.basic_cancel(consumer_tag=consumer_id)
+    
+def publishMove():
+    space = input("Which space will you move to?\n")
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='server',
+                          body=space)
+def publishCombatMove():
+    space = input("Which space will you attack?\n")
+    channel.basic_publish(exchange='apptoserver',
+                          routing_key='server',
+                          body=space)
+    
+def isMovementDone():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignCondMovement, queue=playerNum, no_ack=True)
+    channel.start_consuming()
+    
+moveCont = True
+def assignCondMovement(ch, method, properties, body):
+    print("consume end movement", body)
+    global moveCont
+    body = body.decode()
+    if body == 'n':
+        moveCont = True
+    else:
+        moveCont = False
+    channel.basic_cancel(consumer_tag=consumer_id)
+    
+def consumeCombatOptions():
+    global consumer_id
+    consumer_id = channel.basic_consume(assignCombatOptions, queue=playerNum, no_ack=True)
+    print("consuming combat options")
+    channel.start_consuming()
+
+def assignCombatOptions(ch, method, properties, body):
+    body = json.loads(body.decode())
+    moveOptions = list(body.keys())
+    print("You may attack: ", moveOptions)
+    channel.basic_cancel(consumer_tag=consumer_id)
+        
+oppIsMoving = True
+def getOppIsMoving():
+    global consumer_id
+    consumer_id = channel.basic_consume(oppMoving, queue=playerNum, no_ack=True)
+    channel.start_consuming()
+
+def oppMoving(ch, method, properties, body):
+    global oppIsMoving
+    if body.decode() == 'y':
+        oppIsMoving = True
+    else:
+        oppIsMoving = False
+    channel.basic_cancel(consumer_tag=consumer_id)
 #########################################################################################################
 
 def main():
