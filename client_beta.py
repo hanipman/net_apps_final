@@ -89,27 +89,23 @@ def printBoardCMD():
         otherSloc = player2_units['sorceress']
         for let in letters:
             for num in numbers:
-                skipSpace = False
                 if(let+num in vision):
                     if(let+num == otherWloc):
-                        skipSpace = True
                         if(gameBoard[let+num] == 'mountain'):
                             row.append('W')
                         else:
                             row.append('w')
                     elif(let+num == otherRloc):
-                        skipSpace = True
                         if(gameBoard[let+num] == 'forest'):
                             row.append('R')
                         else:
                             row.append('r')
                     elif(let+num == otherSloc):
-                        skipSpace = True
                         if(gameBoard[let+num] == 'lake'):
                             row.append('S')
                         else:
                             row.append('s')
-                if(skipSpace == False):
+                else:
                     if(gameBoard[let+num] == 'plains'):
                         if(let+num == wloc):
                             row.append('w')
