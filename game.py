@@ -692,7 +692,7 @@ def UpdateVision():
 #########################################################################################################################
 
 def randomGeo():
-    geo = ['plains', 'plains', 'plains']#, 'forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
+    geo = ['plains', 'plains', 'plains', 'forest', 'mountain', 'lake']#(L454):for now just increase amount of plains in list until stable
     return random.choice(geo)
 
 #Assigns the gameBoard dictionary {spaceLocation:randomGeo}
