@@ -23,20 +23,23 @@ def updateGameOver():
     global gameOver
     global player1Wins
     global player2Wins
+    dict = {}
+    #check if player 2 won
     if player1_units['warrior'] == 'DEAD' and player1_units['ranger'] == 'DEAD' and player1_units['sorceress'] == 'DEAD':
         gameOver = True
         player2Wins = True
-    elif player2_units['warrior'] == 'DEAD' and player2_units['ranger'] == 'DEAD' and player2_units['sorceress'] == 'DEAD':
+    #check if player 1 won
+    if player2_units['warrior'] == 'DEAD' and player2_units['ranger'] == 'DEAD' and player2_units['sorceress'] == 'DEAD':
         gameOver = True
-        player1Wins = True
-    dict = {}
-    if player1Wins:
-        dict['player1'] = gameOver
+        if player2Wins:
+            dict['cats'] = gameOver
+        else:
+            dict['player1'] = gameOver        
     elif player2Wins:
         dict['player2'] = gameOver
     else:
         dict['cont'] = gameOver
-    time.sleep(0.25)
+    time.sleep(1)
     channel.basic_publish(exchange='apptoserver',
                               routing_key='player1',
                               body=json.dumps(dict))
@@ -318,7 +321,7 @@ def showAvailableMovement(unit, currentLoc) :
     row = currentLoc[0]
     col = currentLoc[1]
     #this spot
-    #available.add(currentLoc) //shouldn't be able to move to loc you're already on
+    available.add(currentLoc)
     #up
     space = chr(ord(row)-1)+col
     if(checkValidMove(unit, space)):
@@ -506,7 +509,7 @@ def checkVisionBonus(unit, loc):
 ################VISION#######################
 
 def PublishVision(player):
-    time.sleep(0.25)#helps RMQ
+    time.sleep(1)#helps RMQ
     dict = {}
     x = 0
     if(player == 'player1'):
@@ -990,11 +993,12 @@ def getAvailableMoveSpaces(loc):
         for each in directions:
             if checkValidMove('sorceress', each):
                 spaces.add(each)
+    spaces.add(loc)#add current space to stay
     return spaces
 
 availableMoveSpaces = None
 def publishAvailableMoveSpaces(loc):
-    time.sleep(0.25)
+    time.sleep(1)
     global availableMoveSpaces
     dict = {}
     availableMoveSpaces = getAvailableMoveSpaces(loc)
@@ -1109,7 +1113,22 @@ def handleTurn():
         consumeWhichUnit()
         if warriorSelectedForTurn:
             for x in range(0, 2):
-                time.sleep(0.25)
+                time.sleep(1)
+                if(player1_units['warrior'] == 'DEAD'):
+                    time.sleep(1)
+                    publishOwnUnitInfo('1')
+                    publishOwnUnitInfo('2')
+                    publishUnitInfoToOpponent('1')
+                    publishUnitInfoToOpponent('2')
+                    time.sleep(1)
+                    #publish movement done
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player1',
+                                                body='y')
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player2',
+                                                body='n')
+                    break
                 publishAvailableMoveSpaces(player1_units['warrior'])
                 consumeMovementOption()
                 publishOwnUnitInfo('1')
@@ -1119,7 +1138,7 @@ def handleTurn():
                 UpdateVision()
                 #publish movement not done
                 if x == 0:
-                    time.sleep(0.25)
+                    time.sleep(1)
                     channel.basic_publish(exchange='apptoserver',
                                         routing_key='player1',
                                         body='n')
@@ -1127,7 +1146,7 @@ def handleTurn():
                                         routing_key='player2',
                                         body='y')
                 else:
-                    time.sleep(0.25)
+                    time.sleep(1)
                     #publish movement done
                     channel.basic_publish(exchange='apptoserver',
                                                 routing_key='player1',
@@ -1135,16 +1154,17 @@ def handleTurn():
                     channel.basic_publish(exchange='apptoserver',
                                                 routing_key='player2',
                                                 body='n')
-            #enter combat
-            publishAvailableMoveSpaces(player1_units['warrior'])
-            consumeMovementOption()
+            if(player1_units['warrior'] != 'DEAD'):
+                #enter combat
+                publishAvailableMoveSpaces(player1_units['warrior'])
+                consumeMovementOption()
             publishOwnUnitInfo('1')
             publishOwnUnitInfo('2')
             publishUnitInfoToOpponent('1')
             publishUnitInfoToOpponent('2')
             UpdateVision()
         elif rangerSelectedForTurn:
-            time.sleep(0.25)
+            time.sleep(1)
             publishAvailableMoveSpaces(player1_units['ranger'])
             consumeMovementOption()
             publishOwnUnitInfo('1')
@@ -1154,14 +1174,14 @@ def handleTurn():
             UpdateVision()
             #publish movement done
             print("publishing end movement")
-            time.sleep(0.25)
+            time.sleep(1)
             channel.basic_publish(exchange='apptoserver',
                                         routing_key='player1',
                                         body='y')
             channel.basic_publish(exchange='apptoserver',
                                         routing_key='player2',
                                         body='n')
-            time.sleep(0.25)
+            time.sleep(1)
             #enter combat
             publishAvailableRCombatSpaces(player1_units['ranger'])
             consumeRCombat()
@@ -1172,7 +1192,7 @@ def handleTurn():
             UpdateVision()
         else:# sorceressSelectedForTurn:
             for x in range(0, 3):
-                    time.sleep(0.25)
+                    time.sleep(1)
                     publishAvailableMoveSpaces(player1_units['sorceress'])
                     consumeMovementOption()
                     publishOwnUnitInfo('1')
@@ -1182,7 +1202,7 @@ def handleTurn():
                     UpdateVision()
                     #publish movement not done
                     if x == 0 or x == 1:
-                        time.sleep(0.25)
+                        time.sleep(1)
                         channel.basic_publish(exchange='apptoserver',
                                             routing_key='player1',
                                             body='n')
@@ -1190,7 +1210,7 @@ def handleTurn():
                                             routing_key='player2',
                                             body='y')
                     else:
-                        time.sleep(0.25)
+                        time.sleep(1)
                         #publish movement done
                         channel.basic_publish(exchange='apptoserver',
                                                     routing_key='player1',
@@ -1199,7 +1219,7 @@ def handleTurn():
                                                     routing_key='player2',
                                                     body='n')
             #enter combat
-            time.sleep(0.25)
+            time.sleep(1)
             publishAvailableSCombatSpaces(player1_units['sorceress'])
             consumeSCombat()
             publishOwnUnitInfo('1')
@@ -1210,13 +1230,28 @@ def handleTurn():
         updateGameOver()
     else:
         ##player 2 turn
-        #tell player 1 it's their turn
+        #tell player 2 it's their turn
         notifyPlayerOfTurn('player2')
         #consume message for which unit they'll play with this turn
         consumeWhichUnit()
         if warriorSelectedForTurn:
             for x in range(0, 2):
-                time.sleep(0.25)
+                #if(player2_units['warrior'] == 'DEAD'):
+                    #time.sleep(1)
+                    #publishOwnUnitInfo('1')
+                    #publishOwnUnitInfo('2')
+                    #publishUnitInfoToOpponent('2')
+                    #publishUnitInfoToOpponent('1')
+                    #time.sleep(1)
+                    ##publish movement done
+                    #channel.basic_publish(exchange='apptoserver',
+                                                #routing_key='player2',
+                                                #body='y')
+                    #channel.basic_publish(exchange='apptoserver',
+                                                #routing_key='player1',
+                                                #body='n')
+                    #break
+                time.sleep(1)
                 publishAvailableMoveSpaces(player2_units['warrior'])
                 consumeMovementOption()
                 publishOwnUnitInfo('1')
@@ -1224,9 +1259,19 @@ def handleTurn():
                 publishUnitInfoToOpponent('2')
                 publishUnitInfoToOpponent('1')
                 UpdateVision()
+                if player2_units['warrior'] == 'DEAD':
+                    time.sleep(1)
+                    #publish movement done
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player2',
+                                                body='d')
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player1',
+                                                body='n')
+                    break
                 #publish movement not done
                 if x == 0:
-                    time.sleep(0.25)
+                    time.sleep(1)
                     channel.basic_publish(exchange='apptoserver',
                                         routing_key='player2',
                                         body='n')
@@ -1234,7 +1279,7 @@ def handleTurn():
                                         routing_key='player1',
                                         body='y')
                 else:
-                    time.sleep(0.25)
+                    time.sleep(1)
                     #publish movement done
                     channel.basic_publish(exchange='apptoserver',
                                                 routing_key='player2',
@@ -1242,16 +1287,18 @@ def handleTurn():
                     channel.basic_publish(exchange='apptoserver',
                                                 routing_key='player1',
                                                 body='n')
-            #enter combat
-            publishAvailableMoveSpaces(player2_units['warrior'])
-            consumeMovementOption()
+            if player2_units['warrior'] != 'DEAD':
+                #enter combat
+                publishAvailableMoveSpaces(player2_units['warrior'])
+                consumeMovementOption()
+            time.sleep(1)
             publishOwnUnitInfo('2')
             publishOwnUnitInfo('1')
             publishUnitInfoToOpponent('2')
             publishUnitInfoToOpponent('1')
             UpdateVision()
         elif rangerSelectedForTurn:
-            time.sleep(0.25)
+            time.sleep(1)
             publishAvailableMoveSpaces(player2_units['ranger'])
             consumeMovementOption()
             publishOwnUnitInfo('1')
@@ -1261,14 +1308,14 @@ def handleTurn():
             UpdateVision()
             #publish movement done
             print("publishing end movement")
-            time.sleep(0.25)
+            time.sleep(1)
             channel.basic_publish(exchange='apptoserver',
                                         routing_key='player2',
                                         body='y')
             channel.basic_publish(exchange='apptoserver',
                                         routing_key='player1',
                                         body='n')
-            time.sleep(0.25)
+            time.sleep(1)
             #enter combat
             publishAvailableRCombatSpaces(player2_units['ranger'])
             consumeRCombat()
@@ -1279,7 +1326,7 @@ def handleTurn():
             UpdateVision()
         else:# sorceressSelectedForTurn:
             for x in range(0, 3):
-                    time.sleep(0.25)
+                    time.sleep(1)
                     publishAvailableMoveSpaces(player2_units['sorceress'])
                     consumeMovementOption()
                     publishOwnUnitInfo('1')
@@ -1289,7 +1336,7 @@ def handleTurn():
                     UpdateVision()
                     #publish movement not done
                     if x == 0 or x == 1:
-                        time.sleep(0.25)
+                        time.sleep(1)
                         channel.basic_publish(exchange='apptoserver',
                                             routing_key='player2',
                                             body='n')
@@ -1297,7 +1344,7 @@ def handleTurn():
                                             routing_key='player1',
                                             body='y')
                     else:
-                        time.sleep(0.25)
+                        time.sleep(1)
                         #publish movement done
                         channel.basic_publish(exchange='apptoserver',
                                                     routing_key='player2',
@@ -1306,7 +1353,7 @@ def handleTurn():
                                                     routing_key='player1',
                                                     body='n')
             #enter combat
-            time.sleep(0.25)
+            time.sleep(1)
             publishAvailableSCombatSpaces(player2_units['sorceress'])
             consumeSCombat()
             publishOwnUnitInfo('2')
@@ -1317,7 +1364,7 @@ def handleTurn():
         updateGameOver()
 
 def notifyPlayerOfTurn(player):
-    time.sleep(0.25)
+    time.sleep(1)
     if(player == 'player1'):
         channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
@@ -1370,7 +1417,7 @@ def handleDeployment():
     
 
 def publishUnitInfoToOpponent(num):
-    time.sleep(0.25)
+    time.sleep(1)
     if num == '2':
         channel.basic_publish(exchange='apptoserver',
                             routing_key='player1',
@@ -1390,12 +1437,13 @@ def publishOwnUnitInfo(num):
                             routing_key='player1',
                             body=json.dumps(player1_units),
                             properties=pika.BasicProperties(delivery_mode = 2))
+        print("published own unit info to player 1")
     else:
         channel.basic_publish(exchange='apptoserver',
                             routing_key='player2',
                             body=json.dumps(player2_units),
                             properties=pika.BasicProperties(delivery_mode = 2))
-    print("published own unit info")
+        print("published own unit info to player 2")
 #####################################################################################################
 
 def main():

@@ -93,47 +93,52 @@ def printBoardCMD():
                     if(let+num == otherWloc):
                         if(gameBoard[let+num] == 'mountain'):
                             row.append('W')
+                            continue
                         else:
                             row.append('w')
+                            continue
                     elif(let+num == otherRloc):
                         if(gameBoard[let+num] == 'forest'):
                             row.append('R')
+                            continue
                         else:
                             row.append('r')
+                            continue
                     elif(let+num == otherSloc):
                         if(gameBoard[let+num] == 'lake'):
                             row.append('S')
+                            continue
                         else:
                             row.append('s')
-                else:
-                    if(gameBoard[let+num] == 'plains'):
-                        if(let+num == wloc):
-                            row.append('w')
-                        elif(let+num == rloc):
-                            row.append('r')
-                        elif(let+num == sloc):
-                            row.append('s')
-                        else:
-                            row.append('p')
-                    elif(gameBoard[let+num] == 'mountain'):
-                        if(let+num == wloc):
-                            row.append('W')
-                        else:
-                            row.append('m')
-                    elif(gameBoard[let+num] == 'forest'):
-                        if(let+num == wloc):
-                            row.append('w')
-                        elif(let+num == rloc):
-                            row.append('R')
-                        elif(let+num == sloc):
-                            row.append('s')
-                        else:
-                            row.append('f')
-                    elif(gameBoard[let+num] == 'lake'):
-                        if(let+num == sloc):
-                            row.append('S')
-                        else:
-                            row.append('l')
+                            continue
+                if(gameBoard[let+num] == 'plains'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('r')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('p')
+                elif(gameBoard[let+num] == 'mountain'):
+                    if(let+num == wloc):
+                        row.append('W')
+                    else:
+                        row.append('m')
+                elif(gameBoard[let+num] == 'forest'):
+                    if(let+num == wloc):
+                        row.append('w')
+                    elif(let+num == rloc):
+                        row.append('R')
+                    elif(let+num == sloc):
+                        row.append('s')
+                    else:
+                        row.append('f')
+                elif(gameBoard[let+num] == 'lake'):
+                    if(let+num == sloc):
+                        row.append('S')
+                    else:
+                        row.append('l')
 
             print(let+' '+row[0]+row[1]+row[2]+row[3]+row[4]+row[5]+row[6]+row[7])
             row.clear()
@@ -391,10 +396,14 @@ def takeTurn():
                 getVision()
                 #check end of movement
                 isMovementDone()
-            #do combat phase
-            if consumeCombatOptions():
-                #publish attack
-                publishCombatMove()
+            skipRestOfTurn = False
+            if unitIsDead:
+                skipRestOfTurn = True
+            if skipRestOfTurn == False:
+                #do combat phase
+                if consumeCombatOptions():
+                    #publish attack
+                    publishCombatMove()
             #get current unit info
             getCurrentUnitInfo()
             #get Opponent unit info
@@ -466,14 +475,21 @@ def isMovementDone():
     channel.start_consuming()
     
 moveCont = True
+unitIsDead = False
 def assignCondMovement(ch, method, properties, body):
     print("consume end movement", body)
     global moveCont
+    global unitIsDead
     body = body.decode()
     if body == 'n':
         moveCont = True
+        unitIsDead = False
+    elif body == 'y':
+        moveCont = False
+        unitIsDead = False
     else:
         moveCont = False
+        unitIsDead = True
     channel.basic_cancel(consumer_tag=consumer_id)
     
 consumeFlag = None
@@ -530,6 +546,9 @@ def checkGameOver(ch, method, properties, body):
     elif playerNum in winner:
         gameOver = True
         print("You Win!")
+    elif 'cats' in winner:
+        gameOver = True
+        print("Cat's Game")
     else:
         gameOver = True
         print("You Lose!")
