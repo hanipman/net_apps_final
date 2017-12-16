@@ -1114,28 +1114,23 @@ def handleTurn():
         if warriorSelectedForTurn:
             for x in range(0, 2):
                 time.sleep(1)
-                if(player1_units['warrior'] == 'DEAD'):
-                    time.sleep(1)
-                    publishOwnUnitInfo('1')
-                    publishOwnUnitInfo('2')
-                    publishUnitInfoToOpponent('1')
-                    publishUnitInfoToOpponent('2')
-                    time.sleep(1)
-                    #publish movement done
-                    channel.basic_publish(exchange='apptoserver',
-                                                routing_key='player1',
-                                                body='y')
-                    channel.basic_publish(exchange='apptoserver',
-                                                routing_key='player2',
-                                                body='n')
-                    break
                 publishAvailableMoveSpaces(player1_units['warrior'])
                 consumeMovementOption()
                 publishOwnUnitInfo('1')
                 publishOwnUnitInfo('2')
-                publishUnitInfoToOpponent('1')
                 publishUnitInfoToOpponent('2')
+                publishUnitInfoToOpponent('1')
                 UpdateVision()
+                if player1_units['warrior'] == 'DEAD':
+                    time.sleep(1)
+                    #publish movement done
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player1',
+                                                body='d')
+                    channel.basic_publish(exchange='apptoserver',
+                                                routing_key='player2',
+                                                body='n')
+                    break
                 #publish movement not done
                 if x == 0:
                     time.sleep(1)
@@ -1154,15 +1149,17 @@ def handleTurn():
                     channel.basic_publish(exchange='apptoserver',
                                                 routing_key='player2',
                                                 body='n')
-            if(player1_units['warrior'] != 'DEAD'):
+            if player1_units['warrior'] != 'DEAD':
                 #enter combat
                 publishAvailableMoveSpaces(player1_units['warrior'])
                 consumeMovementOption()
-            publishOwnUnitInfo('1')
+            time.sleep(1)
             publishOwnUnitInfo('2')
-            publishUnitInfoToOpponent('1')
+            publishOwnUnitInfo('1')
             publishUnitInfoToOpponent('2')
+            publishUnitInfoToOpponent('1')
             UpdateVision()
+            ##end warrior
         elif rangerSelectedForTurn:
             time.sleep(1)
             publishAvailableMoveSpaces(player1_units['ranger'])
@@ -1236,21 +1233,6 @@ def handleTurn():
         consumeWhichUnit()
         if warriorSelectedForTurn:
             for x in range(0, 2):
-                #if(player2_units['warrior'] == 'DEAD'):
-                    #time.sleep(1)
-                    #publishOwnUnitInfo('1')
-                    #publishOwnUnitInfo('2')
-                    #publishUnitInfoToOpponent('2')
-                    #publishUnitInfoToOpponent('1')
-                    #time.sleep(1)
-                    ##publish movement done
-                    #channel.basic_publish(exchange='apptoserver',
-                                                #routing_key='player2',
-                                                #body='y')
-                    #channel.basic_publish(exchange='apptoserver',
-                                                #routing_key='player1',
-                                                #body='n')
-                    #break
                 time.sleep(1)
                 publishAvailableMoveSpaces(player2_units['warrior'])
                 consumeMovementOption()
@@ -1297,6 +1279,7 @@ def handleTurn():
             publishUnitInfoToOpponent('2')
             publishUnitInfoToOpponent('1')
             UpdateVision()
+            ##end warrior
         elif rangerSelectedForTurn:
             time.sleep(1)
             publishAvailableMoveSpaces(player2_units['ranger'])
