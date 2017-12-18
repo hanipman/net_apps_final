@@ -706,7 +706,10 @@ def createBoard():
         for y in numbers:
             board[x+y] = randomGeo()
     gameBoard = board
+<<<<<<< HEAD
+=======
     #gameBoard = sorted(gameBoard)
+>>>>>>> f9e62519282daadd5d8d391c0108443d099ebd88
 
 def checkInDeploymentZone(player, pos):
     deploymentZone = []
@@ -1402,17 +1405,28 @@ def handleDeployment():
 
 def publishUnitInfoToOpponent(num):
     time.sleep(1)
-    consumeExtra();
     if num == '2':
         channel.basic_publish(exchange='apptoserver',
                             routing_key='player1',
                             body=json.dumps(player2_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+        identifier={'user':'player2'}
+        identifier={**identifier, **player2_units}
+        channel.basic_publish(exchange='servertostorage',
+                            routing_key='store',
+                            body=json.dumps(identifier),
                             properties=pika.BasicProperties(delivery_mode = 2))
         print('published opponent unit info to player 1')
     else:
         channel.basic_publish(exchange='apptoserver',
                             routing_key='player2',
                             body=json.dumps(player1_units),
+                            properties=pika.BasicProperties(delivery_mode = 2))
+        identifier={'user':'player1'}
+        identifier={**identifier, **player1_units}
+        channel.basic_publish(exchange='servertostorage',
+                            routing_key='store',
+                            body=json.dumps(identifier),
                             properties=pika.BasicProperties(delivery_mode = 2))
         print('published opponent unit info to player 2')
 
@@ -1431,27 +1445,25 @@ def publishOwnUnitInfo(num):
         print("published own unit info to player 2")
 #####################################################################################################
 
-def consumeCancel():
-    channel.basic_cancel(consumer_tag=consumer_id)
-
-def consumeExtra():
-    consumer_id = channel.basic_consume(consumeCancel, queue='player1', no_ack=True)
-    channel.start_consuming();
-    consumer_id = channel.basic_consume(consumeCancel, queue='player2', no_ack=True)
-    channel.start_consuming();
-
 def main():
     connectRMQ()
     checkIfPlayersConnected()
     createBoard()
     #push gameBoard through message queue to both players
+<<<<<<< HEAD
+=======
     #consumeExtra();
+>>>>>>> f9e62519282daadd5d8d391c0108443d099ebd88
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
                           properties=pika.BasicProperties(delivery_mode = 2))
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player2',
+                          body=json.dumps(gameBoard),
+                          properties=pika.BasicProperties(delivery_mode = 2))
+    channel.basic_publish(exchange='servertostorage',
+                          routing_key='store',
                           body=json.dumps(gameBoard),
                           properties=pika.BasicProperties(delivery_mode = 2))
     handleDeployment()
