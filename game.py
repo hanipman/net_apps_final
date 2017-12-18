@@ -706,10 +706,6 @@ def createBoard():
         for y in numbers:
             board[x+y] = randomGeo()
     gameBoard = board
-<<<<<<< HEAD
-=======
-    #gameBoard = sorted(gameBoard)
->>>>>>> f9e62519282daadd5d8d391c0108443d099ebd88
 
 def checkInDeploymentZone(player, pos):
     deploymentZone = []
@@ -1450,10 +1446,6 @@ def main():
     checkIfPlayersConnected()
     createBoard()
     #push gameBoard through message queue to both players
-<<<<<<< HEAD
-=======
-    #consumeExtra();
->>>>>>> f9e62519282daadd5d8d391c0108443d099ebd88
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
