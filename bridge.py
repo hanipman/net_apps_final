@@ -48,6 +48,7 @@ while count < len(list_queuesStorage):
 # initialize database and collection
 client = MongoClient()
 db = client.gameStorage
+db.moveHistory.drop()
 print("Created database 'gameStorage'")
 accounts = db.accounts
 print("Created collection 'accounts'")
