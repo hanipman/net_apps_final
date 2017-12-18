@@ -6,6 +6,7 @@ import pika
 import sys
 from pymongo import MongoClient
 from rmq_params import rmq_params
+import json
 
 cred = pika.PlainCredentials(rmq_params['username'], rmq_params['password'])
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=rmq_params['bridgeip'], virtual_host=rmq_params['vhost'], credentials=cred))
@@ -55,7 +56,8 @@ print("Created collection 'moveHistory'")
 
 #TODO Implement MongoDB stores
 def callback(ch, method, properties, body):
-    print(str(body))
+    print(json.loads(body.decode()))
+    db.moveHistory.insert(json.loads(body.decode()))
 
 channel.basic_consume(callback, queue="store", no_ack=True)
 
