@@ -706,6 +706,7 @@ def createBoard():
         for y in numbers:
             board[x+y] = randomGeo()
     gameBoard = board
+    gameBoard = sorted(gameBoard)
 
 def checkInDeploymentZone(player, pos):
     deploymentZone = []
