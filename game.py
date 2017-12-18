@@ -34,7 +34,7 @@ def updateGameOver():
         if player2Wins:
             dict['cats'] = gameOver
         else:
-            dict['player1'] = gameOver        
+            dict['player1'] = gameOver
     elif player2Wins:
         dict['player2'] = gameOver
     else:
@@ -56,7 +56,7 @@ def connectRMQ():
     channel = connection.channel()
     return None
 
-#returns a set of the spaces a unit could see from the range they can see, 
+#returns a set of the spaces a unit could see from the range they can see,
 #the pos on the board, and is the unit a Ranger in a forest? True or False
 def setVisionFromStatAndPos(visionRange, pos, isRangerInForest):
     vision = set()
@@ -360,7 +360,7 @@ def processMoves(player, unit):
     #*******
     return None
 
-def getDistance(pointA, pointB): 
+def getDistance(pointA, pointB):
     AY = ord(pointA[0])
     AX = int(pointA[1])
     BY = ord(pointB[0])
@@ -504,8 +504,8 @@ def checkVisionBonus(unit, loc):
         return True
     else:
         return False
-    
-    
+
+
 ################VISION#######################
 
 def PublishVision(player):
@@ -777,7 +777,7 @@ def deployPlayerCommandLine(player):
         #player2
         for unit in units:
             deployP2UnitFromCommandLine(unit)
-            
+
 #checks if unit can go into space
 def unitCanEnterSpace(unit, pos):
     if(unit == 'warrior'):
@@ -795,8 +795,8 @@ def unitCanEnterSpace(unit, pos):
             return True
         else:
             return False
-    
-            
+
+
 ############################################################################################
 
 ####   RabbitMQ Stuff ####
@@ -885,7 +885,7 @@ def publishAvailableRCombatSpaces(loc):
                 if(diff <= 3):
                     dict[player2_units[each]] = x
                     rCombatSpot.append(player2_units[each])
-            
+
         else:
             #player 2's ranger
             if player1_units[each] in player2_vision:
@@ -903,7 +903,7 @@ def publishAvailableRCombatSpaces(loc):
                                     routing_key='player2',
                                     body=json.dumps(dict))
         print("publish to p2 Available Combat Spaces")
-        
+
 sCombatSpot = []
 def publishAvailableSCombatSpaces(loc):
     global sCombatSpot
@@ -916,7 +916,7 @@ def publishAvailableSCombatSpaces(loc):
                 diff = getDistance(loc, player2_units[each])
                 if(diff <= 2):
                     dict[player2_units[each]] = x
-                    sCombatSpot.append(player2_units[each])            
+                    sCombatSpot.append(player2_units[each])
         else:
             #player 2's ranger
             if player1_units[each] in player2_vision:
@@ -934,7 +934,7 @@ def publishAvailableSCombatSpaces(loc):
                                     routing_key='player2',
                                     body=json.dumps(dict))
         print("publish to p2 Available Combat Spaces")
-        
+
 def assignSelectedUnitForTurn(ch, method, properties, body):
     global warriorSelectedForTurn
     global rangerSelectedForTurn
@@ -954,12 +954,12 @@ def assignSelectedUnitForTurn(ch, method, properties, body):
         rangerSelectedForTurn = False
         sorceressSelectedForTurn = True
     channel.basic_cancel(consumer_tag=consumer_id)
-    
+
 def consumeWhichUnit():
     global consumer_id
     consumer_id = channel.basic_consume(assignSelectedUnitForTurn, queue='server', no_ack=True)
     channel.start_consuming()
-    
+
 player1Turn = True
 def handleGame():
     global player1Turn
@@ -1057,7 +1057,7 @@ def consumeMovementOption():
     consumer_id = channel.basic_consume(assignNewSpace, queue='server', no_ack=True)
     print("consuming move to new space")
     channel.start_consuming()
-    
+
 def consumeRCombat():
     global consumer_id
     consumer_id = channel.basic_consume(killSorceress, queue='server', no_ack=True)
@@ -1072,7 +1072,7 @@ def killSorceress(ch, method, properties, body):
             elif body.decode() == player2_units['ranger']:
                 player1_units['ranger'] = 'DEAD'
                 player2_units['ranger'] = 'DEAD'
-            
+
     else:
         if body.decode() in rCombatSpot:
             if body.decode() == player1_units['sorceress']:
@@ -1081,7 +1081,7 @@ def killSorceress(ch, method, properties, body):
                 player1_units['ranger'] = 'DEAD'
                 player2_units['ranger'] = 'DEAD'
     channel.basic_cancel(consumer_tag=consumer_id)
-    
+
 def consumeSCombat():
     global consumer_id
     consumer_id = channel.basic_consume(killWarrior, queue='server', no_ack=True)
@@ -1104,7 +1104,7 @@ def killWarrior(ch, method, properties, body):
                 player1_units['sorceress'] = 'DEAD'
                 player2_units['sorceress'] = 'DEAD'
     channel.basic_cancel(consumer_tag=consumer_id)
-    
+
 def handleTurn():
     if(player1Turn == True):
         #player 1 turn
@@ -1390,7 +1390,7 @@ def deploy_message(ch, method, properties, body):
         deployP2UnitFromCommandLine('sorceress', space)
     if(player1_units['warrior'] != 'DEPLOY' and player1_units['ranger'] != 'DEPLOY' and player1_units['sorceress'] != 'DEPLOY' and player2_units['warrior'] != 'DEPLOY' and player2_units['ranger'] != 'DEPLOY' and player2_units['sorceress'] != 'DEPLOY'):
         channel.basic_cancel(consumer_tag=consumer_id)
-        
+
 def handleDeployment():
     while (player1_units['warrior'] == 'DEPLOY' or player1_units['ranger'] == 'DEPLOY' or player1_units['sorceress'] == 'DEPLOY' or player2_units['warrior'] == 'DEPLOY' or player2_units['ranger'] == 'DEPLOY' or player2_units['sorceress'] == 'DEPLOY'):
         global consumer_id
@@ -1398,10 +1398,11 @@ def handleDeployment():
         channel.start_consuming()
     publishUnitInfoToOpponent('1')
     publishUnitInfoToOpponent('2')
-    
+
 
 def publishUnitInfoToOpponent(num):
     time.sleep(1)
+    consumeExtra();
     if num == '2':
         channel.basic_publish(exchange='apptoserver',
                             routing_key='player1',
@@ -1414,7 +1415,7 @@ def publishUnitInfoToOpponent(num):
                             body=json.dumps(player1_units),
                             properties=pika.BasicProperties(delivery_mode = 2))
         print('published opponent unit info to player 2')
-    
+
 def publishOwnUnitInfo(num):
     if num == '1':
         channel.basic_publish(exchange='apptoserver',
@@ -1430,11 +1431,21 @@ def publishOwnUnitInfo(num):
         print("published own unit info to player 2")
 #####################################################################################################
 
+def consumeCancel():
+    channel.basic_cancel(consumer_tag=consumer_id)
+
+def consumeExtra():
+    consumer_id = channel.basic_consume(consumeCancel, queue='player1', no_ack=True)
+    channel.start_consuming();
+    consumer_id = channel.basic_consume(consumeCancel, queue='player2', no_ack=True)
+    channel.start_consuming();
+
 def main():
     connectRMQ()
     checkIfPlayersConnected()
     createBoard()
     #push gameBoard through message queue to both players
+    consumerExtra()l;
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
