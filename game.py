@@ -1445,7 +1445,7 @@ def main():
     checkIfPlayersConnected()
     createBoard()
     #push gameBoard through message queue to both players
-    consumerExtra()l;
+    consumerExtra();
     channel.basic_publish(exchange='apptoserver',
                           routing_key='player1',
                           body=json.dumps(gameBoard),
