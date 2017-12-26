@@ -1,9 +1,7 @@
 rmq_params = {
-    "vhost": "",
-    "username": "",
-    "password": "",
-    "bridgeip": "",
-    "exchanges": {""},
-    "queuesGame": {""},
-    "queuesStorage": {""}
+    "vhost": "test",
+    "username": "pi",
+    "password": "raspberry",
+    "bridgeip": "raspberrypi32.local",
+    "exchanges": {"apptoserver", "servertodatabase"}
 }
