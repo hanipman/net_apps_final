@@ -31,9 +31,9 @@ print("Created " + queue_name + " queue for apptoserver")
 result = channel.queue_declare(queue="store")
 queue_name = result.method.queue
 channel.queue_purge(queue_name)
-channel.queue_unbind(queue=queue_name, exchange="servertostorage", routing_key=queue_name)
-channel.queue_bind(exchange="servertostorage", queue=queue_name, routing_key=queue_name)
-print("Created " + queue_name + " queue for servertostorage")
+channel.queue_unbind(queue=queue_name, exchange="servertodatabase", routing_key=queue_name)
+channel.queue_bind(exchange="servertodatabase", queue=queue_name, routing_key=queue_name)
+print("Created " + queue_name + " queue for servertodatabase")
 
 # initialize database and collection
 client = MongoClient()
