@@ -13,7 +13,11 @@ print("Connected to vhost'" + rmq_params["vhost"] + "' on RMQ server at 'localho
 
 def callback(ch, method, properties, body):
     print(json.loads(body.decode()))
+    prop = pika.BasicProperties(correlation_id = properties.correlation_id)
+    channel.basic_publish(exchange="apptoserver", routing_key=properties.reply_to, properties=prop, body={"Recieved": "True"})
+    ch.basic_ack(delivery_tag = method.delivery_tag)
 
+channel.basic_qos(prefetch_count=1)
 channel.basic_consume(callback, queue="server", no_ack=True)
 
 channel.start_consuming()

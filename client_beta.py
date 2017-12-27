@@ -9,12 +9,16 @@ from rmq_params import rmq_params
 cred = pika.PlainCredentials(rmq_params['username'], rmq_params['password'])
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=rmq_params['bridgeip'], virtual_host=rmq_params['vhost'], credentials=cred))
 channel = connection.channel();
-channel.exchange_declare(exchange='apptoserver', exchange_type='direct')
+queue = channel.queue_declare(exclusive=True)
+callback_queue = queue.method.queue
 print("Connected to vhost'" + rmq_params["vhost"] + "' on RMQ server at 'localhost' as user'" + rmq_params["username"] + "'")
 
 state = "mainMenu"
 loggedIn = False
 user = ""
+queue_name = ""
+consumer_id = 0
+response = None
 
 def clearScreen():
     if os.name == 'nt':
@@ -25,6 +29,8 @@ def clearScreen():
 def logInPrompt():
     global loggedIn
     global user
+    global queue_name
+    global consumer_id
     clearScreen()
     print("Login")
     print("To go back type 'back'")
@@ -35,12 +41,25 @@ def logInPrompt():
     if pwd == "back":
         return None
     cred = json.dumps(["Login", {"Username": user, "Password": pwd}])
-    channel.basic_publish(exchange="apptoserver", routing_key="server", body=cred)
+    response = None
+    corr_id = str(uuid.uuid4())
+    prop = pika.BasicProperties(reply_to=callback_queue, correlation_id=corr_id)
+    channel.basic_publish(exchange="apptoserver", routing_key="server", properties=prop, body=cred)
+    while response is None:
+        connection.process_data_events()
     loggedIn = True
+
+def on_response(ch, method, properties, body):
+    global response
+    if self.corr_id == props.correlation_id:
+        response = body
+        print(json.loads(response.decode()))
 
 def createAccountPrompt():
     global loggedIn
     global user
+    global queue_name
+    global consumer_id
     clearScreen()
     print("Create Account")
     print("To go back type 'back'")
@@ -56,6 +75,9 @@ def createAccountPrompt():
 
 def logoutPrompt():
     global loggedIn
+    global user
+    global queue_name
+    global consumer_id
     clearScreen()
     while True:
         print("Are you sure you wish to logout?")
